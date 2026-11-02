@@ -1,5 +1,13 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { createPattern, Pattern } from '../../domain/pattern';
+import {
+  createPattern,
+  floodFill,
+  getCell,
+  Pattern,
+  setCell,
+  setCells,
+} from '../../domain/pattern';
+import { Cell, linePoints, rectanglePoints } from '../../domain/shapes';
 
 /** The tools of the editor. */
 export type Tool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rectangle';
@@ -20,7 +28,9 @@ export class EditorStore {
   private readonly saved = signal<Pattern>(this.current());
   private readonly undoStack = signal<readonly Pattern[]>([]);
   private readonly redoStack = signal<readonly Pattern[]>([]);
-  private strokeStart: Pattern | null = null;
+  private strokeBase: Pattern | null = null;
+  private origin: Cell = [0, 0];
+  private last: Cell = [0, 0];
 
   readonly tool = signal<Tool>('pencil');
   readonly color = signal(1);
@@ -35,7 +45,7 @@ export class EditorStore {
     this.saved.set(pattern);
     this.undoStack.set([]);
     this.redoStack.set([]);
-    this.strokeStart = null;
+    this.strokeBase = null;
     this.color.set(1);
   }
 
@@ -57,20 +67,88 @@ export class EditorStore {
     if (this.color() > next.palette.length) {
       this.color.set(Math.max(1, next.palette.length));
     }
-    if (!this.strokeStart) {
+    if (!this.strokeBase) {
       this.remember(previous);
     }
   }
 
   beginStroke(): void {
-    this.strokeStart = this.current();
+    this.strokeBase = this.current();
   }
 
   endStroke(): void {
-    const start = this.strokeStart;
-    this.strokeStart = null;
+    const start = this.strokeBase;
+    this.strokeBase = null;
     if (start && start !== this.current()) {
       this.remember(start);
+    }
+  }
+
+  /** The active tool starts on a cell. */
+  strokeStart(cell: Cell): void {
+    this.beginStroke();
+    this.origin = cell;
+    this.last = cell;
+    const [x, y] = cell;
+    switch (this.tool()) {
+      case 'fill':
+        this.apply(floodFill(this.current(), x, y, this.color()));
+        break;
+      case 'picker':
+        this.pick(x, y);
+        break;
+      default:
+        this.apply(setCell(this.current(), x, y, this.strokeValue()));
+    }
+  }
+
+  /**
+   * The pointer moved on. Freehand tools connect to the previous cell, because a fast pointer skips
+   * cells; line and rectangle redraw from the state before the stroke as a live preview.
+   */
+  strokeMove(cell: Cell): void {
+    const base = this.strokeBase;
+    if (!base) {
+      return;
+    }
+    const [x, y] = cell;
+    const [fromX, fromY] = this.origin;
+    switch (this.tool()) {
+      case 'pencil':
+      case 'eraser':
+        this.apply(setCells(this.current(), linePoints(...this.last, x, y), this.strokeValue()));
+        this.last = cell;
+        break;
+      case 'line':
+        this.apply(setCells(base, linePoints(fromX, fromY, x, y), this.strokeValue()));
+        break;
+      case 'rectangle':
+        this.apply(setCells(base, rectanglePoints(fromX, fromY, x, y), this.strokeValue()));
+        break;
+      default:
+    }
+  }
+
+  strokeEnd(): void {
+    this.endStroke();
+  }
+
+  /** Takes back a stroke that turned out to be a gesture of two fingers. */
+  strokeCancel(): void {
+    if (this.strokeBase) {
+      this.current.set(this.strokeBase);
+      this.strokeBase = null;
+    }
+  }
+
+  private strokeValue(): number {
+    return this.tool() === 'eraser' ? 0 : this.color();
+  }
+
+  private pick(x: number, y: number): void {
+    const value = getCell(this.current(), x, y);
+    if (value) {
+      this.color.set(value);
     }
   }
 

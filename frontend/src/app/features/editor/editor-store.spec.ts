@@ -172,4 +172,134 @@ describe('EditorStore', () => {
 
     expect(store.color()).toBe(1);
   });
+
+  describe('tools', () => {
+    const cells = () => store.pattern().cells;
+
+    beforeEach(() => {
+      store.load({ ...createPattern(5, 5), palette: ['#000000', '#ffffff'] });
+    });
+
+    it('draws with the pencil in the active colour', () => {
+      store.setColor(2);
+
+      store.strokeStart([1, 1]);
+      store.strokeEnd();
+
+      expect(cells()[6]).toBe(2);
+    });
+
+    it('fills the gaps of a fast stroke', () => {
+      store.strokeStart([0, 0]);
+      store.strokeMove([4, 0]);
+      store.strokeEnd();
+
+      expect(cells().slice(0, 5)).toEqual([1, 1, 1, 1, 1]);
+    });
+
+    it('makes one undo step of a whole stroke', () => {
+      store.strokeStart([0, 0]);
+      store.strokeMove([1, 0]);
+      store.strokeMove([2, 0]);
+      store.strokeEnd();
+
+      store.undo();
+
+      expect(cells().every((cell) => cell === 0)).toBe(true);
+    });
+
+    it('erases', () => {
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+      store.setTool('eraser');
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+
+      expect(cells()[0]).toBe(0);
+    });
+
+    it('flood fills', () => {
+      store.setTool('fill');
+
+      store.strokeStart([2, 2]);
+      store.strokeEnd();
+
+      expect(cells().every((cell) => cell === 1)).toBe(true);
+    });
+
+    it('picks a colour from the chart and draws nothing', () => {
+      store.setColor(2);
+      store.strokeStart([3, 3]);
+      store.strokeEnd();
+      store.setColor(1);
+      store.setTool('picker');
+
+      store.strokeStart([3, 3]);
+      store.strokeEnd();
+
+      expect(store.color()).toBe(2);
+      expect(store.canUndo()).toBe(true);
+      store.undo();
+      expect(store.canUndo()).toBe(false);
+    });
+
+    it('keeps the colour when the picker hits an empty cell', () => {
+      store.setColor(2);
+      store.setTool('picker');
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+
+      expect(store.color()).toBe(2);
+    });
+
+    it('previews a line while dragging and keeps only the last one', () => {
+      store.setTool('line');
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([4, 0]);
+      store.strokeMove([0, 4]);
+      store.strokeEnd();
+
+      expect(cells()[4]).toBe(0);
+      expect(cells()[20]).toBe(1);
+    });
+
+    it('draws a rectangle outline', () => {
+      store.setTool('rectangle');
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([2, 2]);
+      store.strokeEnd();
+
+      expect(cells().filter((cell) => cell === 1)).toHaveLength(8);
+      expect(cells()[6]).toBe(0);
+    });
+
+    it('takes a cancelled stroke back without a trace', () => {
+      store.strokeStart([0, 0]);
+      store.strokeMove([4, 0]);
+
+      store.strokeCancel();
+
+      expect(cells().every((cell) => cell === 0)).toBe(true);
+      expect(store.canUndo()).toBe(false);
+    });
+
+    it('ignores strokes outside the chart', () => {
+      store.strokeStart([-1, -1]);
+      store.strokeEnd();
+
+      expect(store.canUndo()).toBe(false);
+    });
+
+    it('draws up to the edge when a stroke leaves the chart', () => {
+      store.strokeStart([3, 0]);
+      store.strokeMove([9, 0]);
+      store.strokeEnd();
+
+      expect(cells().slice(3, 5)).toEqual([1, 1]);
+    });
+  });
 });
