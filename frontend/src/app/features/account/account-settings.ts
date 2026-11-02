@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, WritableSignal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { SessionService } from '../../api/session.service';
+import {
+  emailValidators,
+  newPasswordValidators,
+  usernameValidators,
+} from '../auth/account-validators';
 
 /** Profile, password and account deletion of the signed-in user. */
 @Component({
@@ -25,7 +30,9 @@ import { SessionService } from '../../api/session.service';
           @if (profileMessage(); as message) {
             <p role="status">{{ message }}</p>
           }
-          <button class="button primary" type="submit" [disabled]="profile.invalid">Save</button>
+          <button class="button primary" type="submit" [disabled]="profile.invalid || busy()">
+            Save
+          </button>
         </form>
       </section>
 
@@ -53,7 +60,7 @@ import { SessionService } from '../../api/session.service';
           @if (passwordMessage(); as message) {
             <p role="status">{{ message }}</p>
           }
-          <button class="button primary" type="submit" [disabled]="password.invalid">
+          <button class="button primary" type="submit" [disabled]="password.invalid || busy()">
             Change password
           </button>
         </form>
@@ -75,7 +82,7 @@ import { SessionService } from '../../api/session.service';
           @if (deleteMessage(); as message) {
             <p class="error" role="alert">{{ message }}</p>
           }
-          <button class="button danger" type="submit" [disabled]="deletion.invalid">
+          <button class="button danger" type="submit" [disabled]="deletion.invalid || busy()">
             Delete my account
           </button>
         </form>
@@ -89,23 +96,12 @@ export class AccountSettings {
   private readonly forms = inject(NonNullableFormBuilder);
 
   readonly profile = this.forms.group({
-    username: [
-      this.session.user()?.username ?? '',
-      [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(32),
-        Validators.pattern(/^[A-Za-z0-9_.-]+$/),
-      ],
-    ],
-    email: [
-      this.session.user()?.email ?? '',
-      [Validators.required, Validators.email, Validators.maxLength(254)],
-    ],
+    username: [this.session.user()?.username ?? '', usernameValidators],
+    email: [this.session.user()?.email ?? '', emailValidators],
   });
   readonly password = this.forms.group({
     currentPassword: ['', Validators.required],
-    newPassword: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(128)]],
+    newPassword: ['', newPasswordValidators],
   });
   readonly deletion = this.forms.group({ password: ['', Validators.required] });
 
@@ -113,33 +109,44 @@ export class AccountSettings {
   readonly passwordMessage = signal<string | null>(null);
   readonly deleteMessage = signal<string | null>(null);
 
-  async saveProfile(): Promise<void> {
-    const { username, email } = this.profile.getRawValue();
-    try {
+  readonly busy = signal(false);
+
+  saveProfile(): Promise<void> {
+    return this.run(this.profileMessage, async () => {
+      const { username, email } = this.profile.getRawValue();
       await this.session.updateProfile(username, email);
       this.profileMessage.set('Saved.');
-    } catch (error) {
-      this.profileMessage.set(apiErrorMessage(error));
-    }
+    });
   }
 
-  async savePassword(): Promise<void> {
-    const { currentPassword, newPassword } = this.password.getRawValue();
-    try {
+  savePassword(): Promise<void> {
+    return this.run(this.passwordMessage, async () => {
+      const { currentPassword, newPassword } = this.password.getRawValue();
       await this.session.changePassword(currentPassword, newPassword);
       this.password.reset();
       this.passwordMessage.set('Password changed. Other devices were signed out.');
-    } catch (error) {
-      this.passwordMessage.set(apiErrorMessage(error));
-    }
+    });
   }
 
-  async deleteAccount(): Promise<void> {
-    try {
+  deleteAccount(): Promise<void> {
+    return this.run(this.deleteMessage, async () => {
       await this.session.deleteAccount(this.deletion.getRawValue().password);
       await this.router.navigateByUrl('/sign-in');
+    });
+  }
+
+  /** Runs one request at a time and shows a failure in the message of its form. */
+  private async run(message: WritableSignal<string | null>, action: () => Promise<void>) {
+    if (this.busy()) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await action();
     } catch (error) {
-      this.deleteMessage.set(apiErrorMessage(error));
+      message.set(apiErrorMessage(error));
+    } finally {
+      this.busy.set(false);
     }
   }
 }

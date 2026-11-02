@@ -85,6 +85,16 @@ describe('SessionService', () => {
     expect(session.user()).toBeNull();
   });
 
+  it('asks the backend who is signed in when signing out fails', async () => {
+    session.setUser(user);
+    const done = session.signOut();
+    http.expectOne('/api/auth/logout').flush(null, { status: 401, statusText: 'Unauthorized' });
+    await answerCsrfRefresh();
+    await done;
+
+    expect(session.user()).toBeNull();
+  });
+
   it('updates the user after a profile change', async () => {
     session.setUser(user);
     const changed = { ...user, username: 'leuthardt' };
