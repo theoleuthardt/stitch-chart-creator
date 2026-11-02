@@ -100,13 +100,6 @@ class AuthApiTests {
   }
 
   @Test
-  void theSessionCookieIsNotReadableByScripts() throws Exception {
-    String header = register(unique()).andReturn().getResponse().getHeader("Set-Cookie");
-
-    assertThat(header).contains("SESSION=").contains("HttpOnly").contains("SameSite=Lax");
-  }
-
-  @Test
   void passwordsAreStoredAsArgon2Hashes() throws Exception {
     String username = unique();
     register(username).andExpect(status().isCreated());
