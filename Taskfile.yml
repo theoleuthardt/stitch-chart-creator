@@ -59,6 +59,12 @@ tasks:
     cmds:
       - podman compose down
 
+  e2e:
+    desc: Run the browser tests; needs task db:up and task backend:dev
+    dir: frontend
+    cmds:
+      - npm run e2e
+
   frontend:install:
     desc: Install the frontend dependencies
     dir: frontend

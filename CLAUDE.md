@@ -28,6 +28,7 @@ task format         # Prettier and google-java-format
 task build          # production bundle and jar
 task check          # lint + format check + tests + build; run before calling anything done
 task audit          # known vulnerabilities in the frontend runtime dependencies
+task e2e            # Playwright against the production bundle, needs db and backend running
 ```
 
 Needs Node 22 (`frontend/.nvmrc`), Java 25 and Podman or Docker. Backend tests need a container
