@@ -3,6 +3,7 @@ import { downloadFile, fileName } from '../../export/download';
 import { canvasFits, exportLayout, ExportOptions } from '../../export/image-layout';
 import { serializePattern } from '../../export/pattern-file';
 import { renderPng } from '../../export/to-png';
+import { renderSvg } from '../../export/to-svg';
 import { EditorStore } from './editor-store';
 
 /** Turns the open chart into files. */
@@ -57,6 +58,7 @@ import { EditorStore } from './editor-store';
     }
     <div class="actions">
       <button class="button" type="button" [disabled]="!fits()" (click)="exportPng()">PNG</button>
+      <button class="button" type="button" (click)="exportSvg()">SVG</button>
       <button class="button" type="button" (click)="exportJson()">Chart file</button>
     </div>
   `,
@@ -126,6 +128,14 @@ export class ExportPanel {
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'The export failed.');
     }
+  }
+
+  exportSvg(): void {
+    const pattern = this.store.pattern();
+    downloadFile(
+      fileName(pattern.title, 'svg'),
+      new Blob([renderSvg(pattern, this.options())], { type: 'image/svg+xml' }),
+    );
   }
 
   exportJson(): void {
