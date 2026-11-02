@@ -4,11 +4,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** Request bodies of the auth and account routes. */
+/**
+ * Request bodies of the auth and account routes. The e-mail pattern starts with a length lookahead,
+ * because {@code @Size} does not stop {@code @Pattern} from running on a huge input, and dots only
+ * separate labels, which keeps the match linear.
+ */
 final class AccountRequests {
 
   private static final String USERNAME = "[A-Za-z0-9_.-]+";
-  private static final String EMAIL = "[^@\\s]+@[^@\\s.]+(\\.[^@\\s.]+)+";
+  private static final String EMAIL = "(?=.{3,254}$)[^@\\s]+@[^@\\s.]+(\\.[^@\\s.]+)+";
 
   private AccountRequests() {}
 
