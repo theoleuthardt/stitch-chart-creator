@@ -7,8 +7,8 @@ reviews:
         the flat cells array, and that every behaviour has a unit test.
     - path: 'frontend/src/app/**/*.ts'
       instructions: >
-        Flag narrative comments; only TSDoc on classes, functions and module-level constants is
-        allowed (see CLAUDE.md). Data from imported files must be validated where it enters the app.
+        Flag narrative comments; only TSDoc on classes, interfaces, types, functions and module-level
+        constants is allowed (see CLAUDE.md). Data from imported files must be validated where it enters the app.
     - path: 'frontend/src/app/features/**/*'
       instructions: >
         Components hold UI state only; logic belongs in src/app/domain. Flag literal colours outside
