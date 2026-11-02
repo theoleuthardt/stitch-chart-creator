@@ -49,8 +49,12 @@ export class SessionService {
     );
   }
 
+  /**
+   * Ends the session. Whether that worked is decided by asking the backend afterwards: a session
+   * that already ended elsewhere makes the logout fail, and the user is signed out all the same.
+   */
   async signOut(): Promise<void> {
-    await firstValueFrom(this.http.post('/api/auth/logout', null));
+    await firstValueFrom(this.http.post('/api/auth/logout', null)).catch(() => undefined);
     await this.load();
   }
 
