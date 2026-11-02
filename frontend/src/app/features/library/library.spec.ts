@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { PatternApi, PatternPage, PatternSummary, StoredPattern } from '../../api/pattern-api';
 import { createPattern } from '../../domain/pattern';
+import { serializePattern } from '../../export/pattern-file';
 import { Library } from './library';
 
 const summary: PatternSummary = {
@@ -98,6 +99,26 @@ describe('Library', () => {
     await fixture.componentInstance.rename(summary, '   ');
 
     expect(api.save).not.toHaveBeenCalled();
+  });
+
+  it('opens a valid chart file as a new chart', async () => {
+    const { fixture, api, navigate } = await setup();
+
+    await fixture.componentInstance.importText(
+      Promise.resolve(serializePattern(createPattern(2, 2, 'crossStitch', 'Imported'))),
+    );
+
+    expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ title: 'Imported' }));
+    expect(navigate).toHaveBeenCalledWith('/charts/new');
+  });
+
+  it('shows why a chart file was refused and changes nothing', async () => {
+    const { fixture, api } = await setup();
+
+    await fixture.componentInstance.importText(Promise.resolve('nonsense'));
+
+    expect(fixture.componentInstance.error()).toBe('This is not a chart file.');
+    expect(api.create).not.toHaveBeenCalled();
   });
 
   it('deletes a chart after asking', async () => {

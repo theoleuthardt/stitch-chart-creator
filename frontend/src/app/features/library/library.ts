@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { PatternApi, PatternSummary } from '../../api/pattern-api';
 import { createPattern, Pattern } from '../../domain/pattern';
+import { parsePatternFile } from '../../export/pattern-file';
 
 /** The start screen: the user's charts and a form for a new one. */
 @Component({
@@ -33,6 +34,14 @@ import { createPattern, Pattern } from '../../domain/pattern';
             Create chart
           </button>
         </form>
+        <label class="button import" for="import-file">Open a chart file</label>
+        <input
+          id="import-file"
+          class="visually-hidden"
+          type="file"
+          accept=".json,application/json"
+          (change)="importFile($any($event.target))"
+        />
       </section>
 
       @if (error(); as message) {
@@ -95,6 +104,18 @@ import { createPattern, Pattern } from '../../domain/pattern';
     .size {
       display: flex;
       gap: 0.75rem;
+    }
+
+    .import {
+      display: inline-block;
+      margin-top: 0.5rem;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
     }
 
     .grid {
@@ -190,6 +211,25 @@ export class Library implements OnInit {
     const { title, width, height } = this.newChart.getRawValue();
     return this.attempt(async () => {
       const created = await this.api.create(createPattern(width, height, 'crossStitch', title));
+      await this.router.navigateByUrl(`/charts/${created.id}`);
+    });
+  }
+
+  /** Opens a chart file as a new chart. A broken file only gives a message. */
+  importFile(input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    input.value = '';
+    return file ? this.importText(file.text()) : Promise.resolve();
+  }
+
+  async importText(text: Promise<string>): Promise<void> {
+    const result = parsePatternFile(await text);
+    if (!result.ok) {
+      this.error.set(result.error);
+      return;
+    }
+    return this.attempt(async () => {
+      const created = await this.api.create(result.pattern);
       await this.router.navigateByUrl(`/charts/${created.id}`);
     });
   }

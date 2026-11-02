@@ -17,6 +17,7 @@ import { Autosave, SaveStatus } from './autosave';
 import { ChartCanvas } from './chart-canvas';
 import { ChartSettings } from './chart-settings';
 import { EditorStore, Tool } from './editor-store';
+import { ExportPanel } from './export-panel';
 import { PalettePanel } from './palette-panel';
 import { shortcutFor } from './shortcuts';
 
@@ -32,7 +33,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
 /** The editor screen around the chart. */
 @Component({
   selector: 'scc-editor',
-  imports: [ChartCanvas, ChartSettings, PalettePanel],
+  imports: [ChartCanvas, ChartSettings, ExportPanel, PalettePanel],
   providers: [EditorStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -84,6 +85,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
           <aside>
             <scc-chart-settings />
             <scc-palette-panel />
+            <scc-export-panel />
           </aside>
         </div>
       </div>
