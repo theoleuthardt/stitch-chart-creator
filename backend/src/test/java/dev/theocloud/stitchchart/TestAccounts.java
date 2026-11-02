@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import jakarta.servlet.http.Cookie;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.MockMvc;
 public final class TestAccounts {
 
   public static final String PASSWORD = "correct horse battery";
+
+  private static final AtomicInteger NEXT_CLIENT = new AtomicInteger();
 
   private TestAccounts() {}
 
@@ -46,7 +48,8 @@ public final class TestAccounts {
                 .content(body)
                 .with(csrf())
                 .with(request -> {
-                  request.setRemoteAddr("10.0.0." + ThreadLocalRandom.current().nextInt(1, 255));
+                  int client = NEXT_CLIENT.incrementAndGet();
+                  request.setRemoteAddr("10.1.%d.%d".formatted(client >> 8, client & 255));
                   return request;
                 }))
         .andReturn()
