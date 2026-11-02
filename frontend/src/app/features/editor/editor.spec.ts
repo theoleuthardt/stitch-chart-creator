@@ -51,6 +51,35 @@ describe('Editor', () => {
     expect(element.querySelector('scc-chart-canvas')).toBeNull();
   });
 
+  it('mirrors and rotates the chart as undoable steps', async () => {
+    const pattern = { ...createPattern(2, 1), id: 'a', version: 1, cells: [1, 0] };
+    const { fixture, element } = await setup(vi.fn(() => Promise.resolve(pattern)));
+    const store = fixture.debugElement.injector.get(EditorStore);
+    await fixture.whenStable();
+    const button = (label: string) =>
+      [...element.querySelectorAll('button')].find((entry) => entry.textContent?.includes(label));
+
+    button('Mirror ↔')?.click();
+    expect(store.pattern().cells).toEqual([0, 1]);
+
+    button('Rotate ↻')?.click();
+    expect(store.pattern().width).toBe(1);
+
+    store.undo();
+    store.undo();
+    expect(store.pattern().cells).toEqual([1, 0]);
+  });
+
+  it('switches the symmetry axes', async () => {
+    const pattern = { ...createPattern(2, 1), id: 'a', version: 1 };
+    const { fixture } = await setup(vi.fn(() => Promise.resolve(pattern)));
+    const store = fixture.debugElement.injector.get(EditorStore);
+
+    fixture.componentInstance.toggleSymmetry('vertical');
+
+    expect(store.symmetry()).toEqual({ horizontal: false, vertical: true });
+  });
+
   it('warns before leaving with unsaved changes', async () => {
     const pattern = { ...createPattern(2, 2), id: 'a', version: 1 };
     const { fixture } = await setup(vi.fn(() => Promise.resolve(pattern)));

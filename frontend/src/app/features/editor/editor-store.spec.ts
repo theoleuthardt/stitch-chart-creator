@@ -347,6 +347,62 @@ describe('EditorStore', () => {
       expect(store.canUndo()).toBe(false);
     });
 
+    it('mirrors a stroke with symmetry on', () => {
+      store.setSymmetry({ horizontal: true, vertical: false });
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+
+      expect(cells()[4]).toBe(1);
+    });
+
+    it('mirrors a freehand stroke as it moves', () => {
+      store.setSymmetry({ horizontal: false, vertical: true });
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([2, 0]);
+      store.strokeEnd();
+
+      expect(cells().slice(20, 23)).toEqual([1, 1, 1]);
+    });
+
+    it('mirrors lines and rectangles', () => {
+      store.setSymmetry({ horizontal: true, vertical: false });
+      store.setTool('line');
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([1, 0]);
+      store.strokeEnd();
+
+      expect(cells().slice(0, 5)).toEqual([1, 1, 0, 1, 1]);
+    });
+
+    it('mirrors a fill', () => {
+      store.load({
+        ...createPattern(3, 1),
+        palette: ['#000000', '#ffffff'],
+        cells: [0, 1, 0],
+      });
+      store.setSymmetry({ horizontal: true, vertical: false });
+      store.setTool('fill');
+      store.setColor(2);
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+
+      expect(cells()).toEqual([2, 1, 2]);
+    });
+
+    it('makes one undo step of a mirrored stroke', () => {
+      store.setSymmetry({ horizontal: true, vertical: true });
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+      store.undo();
+
+      expect(cells().every((cell) => cell === 0)).toBe(true);
+    });
+
     it('ignores strokes outside the chart', () => {
       store.strokeStart([-1, -1]);
       store.strokeEnd();

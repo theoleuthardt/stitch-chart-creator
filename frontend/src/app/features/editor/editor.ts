@@ -13,6 +13,14 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { PatternApi } from '../../api/pattern-api';
+import {
+  mirrorHorizontal,
+  mirrorVertical,
+  Pattern,
+  rotateClockwise,
+  rotateCounterClockwise,
+} from '../../domain/pattern';
+import { Symmetry } from '../../domain/symmetry';
 import { Autosave, SaveStatus } from './autosave';
 import { ChartCanvas } from './chart-canvas';
 import { ChartSettings } from './chart-settings';
@@ -60,6 +68,30 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
           </button>
           <button class="button" type="button" [disabled]="!store.canRedo()" (click)="store.redo()">
             Redo
+          </button>
+          <span class="separator"></span>
+          @for (action of transforms; track action.label) {
+            <button class="button" type="button" (click)="store.apply(action.run(store.pattern()))">
+              {{ action.label }}
+            </button>
+          }
+          <button
+            class="button"
+            type="button"
+            [class.active]="store.symmetry().horizontal"
+            [attr.aria-pressed]="store.symmetry().horizontal"
+            (click)="toggleSymmetry('horizontal')"
+          >
+            Symmetry ↔
+          </button>
+          <button
+            class="button"
+            type="button"
+            [class.active]="store.symmetry().vertical"
+            [attr.aria-pressed]="store.symmetry().vertical"
+            (click)="toggleSymmetry('vertical')"
+          >
+            Symmetry ↕
           </button>
           <span class="separator"></span>
           <button class="button" type="button" (click)="canvas().zoom(1.25)">Zoom in</button>
@@ -171,6 +203,12 @@ export class Editor {
     { tool: 'rectangle', label: 'Rectangle', key: 'R' },
   ];
 
+  readonly transforms: readonly { label: string; run: (pattern: Pattern) => Pattern }[] = [
+    { label: 'Mirror ↔', run: mirrorHorizontal },
+    { label: 'Mirror ↕', run: mirrorVertical },
+    { label: 'Rotate ↺', run: rotateCounterClockwise },
+    { label: 'Rotate ↻', run: rotateClockwise },
+  ];
   readonly ready = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly status = computed(() => this.autosave()?.status() ?? 'saved');
@@ -221,6 +259,11 @@ export class Editor {
   async overwrite(): Promise<void> {
     const stored = await this.api.get(this.id);
     this.autosave()?.overwrite(stored.version);
+  }
+
+  toggleSymmetry(axis: keyof Symmetry): void {
+    const symmetry = this.store.symmetry();
+    this.store.setSymmetry({ ...symmetry, [axis]: !symmetry[axis] });
   }
 
   /** Warns before leaving while changes are not stored yet. */

@@ -1,13 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
-import {
-  createPattern,
-  floodFill,
-  getCell,
-  Pattern,
-  setCell,
-  setCells,
-} from '../../domain/pattern';
+import { createPattern, floodFill, getCell, Pattern, setCells } from '../../domain/pattern';
 import { Cell, linePoints, rectanglePoints } from '../../domain/shapes';
+import { Symmetry, withSymmetry } from '../../domain/symmetry';
 
 /** The tools of the editor. */
 export type Tool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rectangle';
@@ -34,6 +28,7 @@ export class EditorStore {
 
   readonly tool = signal<Tool>('pencil');
   readonly color = signal(1);
+  readonly symmetry = signal<Symmetry>({ horizontal: false, vertical: false });
   readonly pattern = this.current.asReadonly();
   readonly canUndo = computed(() => this.undoStack().length > 0);
   readonly canRedo = computed(() => this.redoStack().length > 0);
@@ -55,6 +50,10 @@ export class EditorStore {
 
   setColor(color: number): void {
     this.color.set(color);
+  }
+
+  setSymmetry(symmetry: Symmetry): void {
+    this.symmetry.set(symmetry);
   }
 
   /** Replaces the chart. During a stroke the change joins the undo step of that stroke. */
@@ -89,13 +88,18 @@ export class EditorStore {
     const [x, y] = cell;
     switch (this.tool()) {
       case 'fill':
-        this.apply(floodFill(this.current(), x, y, this.color()));
+        this.apply(
+          this.mirrored([cell]).reduce(
+            (pattern, [fillX, fillY]) => floodFill(pattern, fillX, fillY, this.color()),
+            this.current(),
+          ),
+        );
         break;
       case 'picker':
         this.pick(x, y);
         break;
       default:
-        this.apply(setCell(this.current(), x, y, this.strokeValue()));
+        this.paint(this.current(), [cell]);
     }
   }
 
@@ -113,14 +117,14 @@ export class EditorStore {
     switch (this.tool()) {
       case 'pencil':
       case 'eraser':
-        this.apply(setCells(this.current(), linePoints(...this.last, x, y), this.strokeValue()));
+        this.paint(this.current(), linePoints(...this.last, x, y));
         this.last = cell;
         break;
       case 'line':
-        this.apply(setCells(base, linePoints(fromX, fromY, x, y), this.strokeValue()));
+        this.paint(base, linePoints(fromX, fromY, x, y));
         break;
       case 'rectangle':
-        this.apply(setCells(base, rectanglePoints(fromX, fromY, x, y), this.strokeValue()));
+        this.paint(base, rectanglePoints(fromX, fromY, x, y));
         break;
       default:
     }
@@ -136,6 +140,15 @@ export class EditorStore {
       this.current.set(this.strokeBase);
       this.strokeBase = null;
     }
+  }
+
+  private paint(base: Pattern, points: readonly Cell[]): void {
+    this.apply(setCells(base, this.mirrored(points), this.strokeValue()));
+  }
+
+  private mirrored(points: readonly Cell[]): Cell[] {
+    const { width, height } = this.current();
+    return withSymmetry(points, width, height, this.symmetry());
   }
 
   private strokeValue(): number {
