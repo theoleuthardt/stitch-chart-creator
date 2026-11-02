@@ -19,10 +19,10 @@ reviews:
         and delegate; flag business logic in them. Every route on user data must check ownership and
         answer 404 for a foreign resource. Flag secrets or password hashes that could reach a log or
         a response, and hand-built SQL.
-    - path: 'backend/src/main/resources/db/migration/**/*.sql'
+    - path: 'backend/src/main/resources/db/changelog/**/*'
       instructions: >
-        Migrations are immutable once merged. Flag silent data loss, and foreign keys without an
-        index or a deliberate delete rule.
+        Changesets are immutable once merged and need a rollback. Flag silent data loss, and foreign
+        keys without an index or a deliberate delete rule.
 
 tone_instructions: >
   Prioritize correctness, security and maintainability over style. Call out premature abstraction as

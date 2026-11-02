@@ -22,7 +22,7 @@ task check          # lint, format check, tests and build
 ## Stack
 
 - `frontend/`: Angular 22, Vitest, ESLint, Prettier
-- `backend/`: Spring Boot 4 on Java 25, Maven, Flyway, Testcontainers
+- `backend/`: Spring Boot 4 on Java 25, Maven, Liquibase, Testcontainers
 - PostgreSQL 18
 
 ## Contributing

@@ -28,7 +28,7 @@ the same core features for free.
 
 - **Plain Angular in the frontend.** Built with the Angular CLI; `ng build` produces static files.
 - **Spring Boot on Java 25 in the backend.** A REST API under `/api`, packaged as a jar.
-- **PostgreSQL for all stored data.** Flyway owns the schema, Hibernate only validates it.
+- **PostgreSQL for all stored data.** Liquibase owns the schema, Hibernate only validates it.
 - **Accounts are required to save.** Every pattern belongs to an account, which makes them available
   on every device. Share links are the only way to see a chart without one.
 - **Server-side sessions.** Sessions live in Postgres behind an `HttpOnly` cookie, with CSRF

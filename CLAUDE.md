@@ -51,8 +51,10 @@ builders. `ng test` runs Vitest in jsdom with its globals, so specs do not impor
 
 - Controllers parse and validate input and delegate; business logic lives in services.
 - Every route on user data checks ownership; a foreign resource answers 404, never 403.
-- Schema changes only through Flyway (`backend/src/main/resources/db/migration`,
-  `V<n>__<description>.sql`). Hibernate validates the schema and never changes it.
+- Schema changes only through Liquibase: formatted SQL in
+  `backend/src/main/resources/db/changelog/changes/<nnn>-<description>.sql`, picked up in name order,
+  each changeset with a `--rollback`. Merged changesets are immutable. Hibernate validates the schema
+  and never changes it.
 - Integration tests run against a real Postgres (`TestcontainersConfiguration`), no H2.
 - Secrets come from the environment; the `dev` profile holds only the local compose credentials.
 
