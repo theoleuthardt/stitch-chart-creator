@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { SessionService } from '../../api/session.service';
+import { emailValidators, newPasswordValidators, usernameValidators } from './account-validators';
 
 /** The registration screen. */
 @Component({
@@ -53,17 +54,9 @@ export class Register {
   private readonly router = inject(Router);
 
   readonly form = inject(NonNullableFormBuilder).group({
-    username: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(32),
-        Validators.pattern(/^[A-Za-z0-9_.-]+$/),
-      ],
-    ],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
-    password: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(128)]],
+    username: ['', usernameValidators],
+    email: ['', emailValidators],
+    password: ['', newPasswordValidators],
   });
   readonly attempted = signal(false);
   readonly busy = signal(false);
