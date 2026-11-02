@@ -6,6 +6,9 @@ import { PatternApi, PatternSummary } from '../../api/pattern-api';
 import { createPattern, Pattern } from '../../domain/pattern';
 import { parsePatternFile } from '../../export/pattern-file';
 
+/** A side of a chart is a positive whole number. */
+const sizeValidators = [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)];
+
 /** The start screen: the user's charts and a form for a new one. */
 @Component({
   selector: 'scc-library',
@@ -177,8 +180,8 @@ export class Library implements OnInit {
 
   readonly newChart = inject(NonNullableFormBuilder).group({
     title: ['Untitled', [Validators.required, Validators.maxLength(200)]],
-    width: [50, [Validators.required, Validators.min(1)]],
-    height: [50, [Validators.required, Validators.min(1)]],
+    width: [50, sizeValidators],
+    height: [50, sizeValidators],
   });
   readonly charts = signal<PatternSummary[]>([]);
   readonly total = signal(0);

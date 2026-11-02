@@ -77,6 +77,15 @@ describe('Library', () => {
     expect(api.create).not.toHaveBeenCalled();
   });
 
+  it('refuses a size that is not a whole number', async () => {
+    const { fixture, api } = await setup();
+    fixture.componentInstance.newChart.setValue({ title: 'Tulip', width: 2.5, height: 12 });
+
+    await fixture.componentInstance.create();
+
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
   it('duplicates a chart under a new title', async () => {
     const { fixture, api } = await setup();
 
