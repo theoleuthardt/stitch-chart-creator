@@ -27,7 +27,9 @@ class SecurityConfig {
   SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       SecurityContextRepository securityContextRepository,
-      @Value("${app.max-request-bytes}") long maxRequestBytes)
+      @Value("${app.max-request-bytes}") long maxRequestBytes,
+      @Value("${app.large-request-bytes}") long largeRequestBytes,
+      @Value("${app.large-request-slots}") int largeRequestSlots)
       throws Exception {
     return http.authorizeHttpRequests(requests ->
             requests
@@ -47,7 +49,9 @@ class SecurityConfig {
                 .logoutSuccessHandler(
                     new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
         .addFilterBefore(new AuthRateLimitFilter(), AnonymousAuthenticationFilter.class)
-        .addFilterBefore(new RequestSizeLimitFilter(maxRequestBytes), CsrfFilter.class)
+        .addFilterBefore(
+            new RequestSizeLimitFilter(maxRequestBytes, largeRequestBytes, largeRequestSlots),
+            CsrfFilter.class)
         .build();
   }
 
