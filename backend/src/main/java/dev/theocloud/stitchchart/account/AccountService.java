@@ -1,5 +1,6 @@
 package dev.theocloud.stitchchart.account;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -12,6 +13,12 @@ import org.springframework.web.server.ResponseStatusException;
 /** Creates accounts and checks credentials. */
 @Service
 public class AccountService {
+
+  /** Failed logins in a row that lock an account. */
+  private static final int MAX_FAILED_LOGINS = 5;
+
+  /** How long a locked account stays locked. */
+  private static final Duration LOCK_DURATION = Duration.ofMinutes(15);
 
   private final UserAccountRepository accounts;
   private final PasswordEncoder passwordEncoder;
@@ -26,8 +33,7 @@ public class AccountService {
   /** Creates an account; a taken username or e-mail answers 409. */
   @Transactional
   public UserAccount register(AuthRequests.Register request) {
-    if (accounts.existsByUsernameIgnoreCase(request.username())
-        || accounts.existsByEmailIgnoreCase(request.email())) {
+    if (accounts.usernameExists(request.username()) || accounts.emailExists(request.email())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Username or e-mail is already taken");
     }
     try {
@@ -54,10 +60,10 @@ public class AccountService {
       throw invalidCredentials();
     }
     if (!matches) {
-      account.recordFailedLogin(now);
+      accounts.recordFailedLogin(account.getId(), MAX_FAILED_LOGINS, now.plus(LOCK_DURATION));
       throw invalidCredentials();
     }
-    account.recordSuccessfulLogin();
+    accounts.recordSuccessfulLogin(account.getId());
     return account;
   }
 

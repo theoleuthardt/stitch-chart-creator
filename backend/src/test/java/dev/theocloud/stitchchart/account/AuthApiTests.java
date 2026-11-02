@@ -10,7 +10,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.theocloud.stitchchart.IntegrationTest;
 import jakarta.servlet.http.Cookie;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,6 +195,24 @@ class AuthApiTests {
     jdbcTemplate.update(
         "update users set locked_until = now() - interval '1 second' where username = ?", username);
     login(username, PASSWORD).andExpect(status().isOk());
+  }
+
+  @Test
+  void parallelFailedLoginsStillLockTheAccount() throws Exception {
+    String username = unique();
+    register(username).andExpect(status().isCreated());
+
+    try (ExecutorService pool = Executors.newFixedThreadPool(5)) {
+      List<Callable<Integer>> attempts =
+          Collections.nCopies(
+              5,
+              () -> login(username, "wrong password here").andReturn().getResponse().getStatus());
+      for (Future<Integer> attempt : pool.invokeAll(attempts)) {
+        assertThat(attempt.get()).isEqualTo(401);
+      }
+    }
+
+    login(username, PASSWORD).andExpect(status().isUnauthorized());
   }
 
   @Test

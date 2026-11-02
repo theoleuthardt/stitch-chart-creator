@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,12 +13,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "users")
 public class UserAccount {
-
-  /** Failed logins in a row that lock an account. */
-  static final int MAX_FAILED_LOGINS = 5;
-
-  /** How long a locked account stays locked. */
-  static final Duration LOCK_DURATION = Duration.ofMinutes(15);
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -72,19 +65,5 @@ public class UserAccount {
 
   boolean isLocked(Instant now) {
     return lockedUntil != null && lockedUntil.isAfter(now);
-  }
-
-  /** Counts a failed login and locks the account once the limit is reached. */
-  void recordFailedLogin(Instant now) {
-    failedLogins++;
-    if (failedLogins >= MAX_FAILED_LOGINS) {
-      lockedUntil = now.plus(LOCK_DURATION);
-      failedLogins = 0;
-    }
-  }
-
-  void recordSuccessfulLogin() {
-    failedLogins = 0;
-    lockedUntil = null;
   }
 }
