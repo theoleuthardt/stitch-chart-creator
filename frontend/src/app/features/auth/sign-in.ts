@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { SessionService } from '../../api/session.service';
+import { safeReturnUrl } from '../../domain/return-url';
 
 /** The sign-in screen. */
 @Component({
@@ -56,17 +57,13 @@ export class SignIn {
     this.error.set(null);
     try {
       await this.session.signIn(username, password);
-      await this.router.navigateByUrl(this.returnUrl());
+      await this.router.navigateByUrl(
+        safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl')),
+      );
     } catch (error) {
       this.error.set(apiErrorMessage(error));
     } finally {
       this.busy.set(false);
     }
-  }
-
-  /** The page to return to. Only paths inside this app count, never another site. */
-  private returnUrl(): string {
-    const target = this.route.snapshot.queryParamMap.get('returnUrl');
-    return target?.startsWith('/') && !target.startsWith('//') ? target : '/';
   }
 }
