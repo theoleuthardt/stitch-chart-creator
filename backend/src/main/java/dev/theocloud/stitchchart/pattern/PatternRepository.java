@@ -5,12 +5,17 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 /** Data access for {@link ChartPattern}, always scoped to the owner. */
 interface PatternRepository extends JpaRepository<ChartPattern, UUID> {
 
   Optional<ChartPattern> findByIdAndOwnerId(UUID id, UUID ownerId);
+
+  @Modifying
+  @Query("delete from ChartPattern p where p.id = ?1 and p.ownerId = ?2")
+  int deleteOwned(UUID id, UUID ownerId);
 
   @Query(
       """
