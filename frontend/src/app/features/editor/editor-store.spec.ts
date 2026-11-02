@@ -129,6 +129,66 @@ describe('EditorStore', () => {
     expect(undone).toBeGreaterThan(0);
   });
 
+  it('counts cells that several steps share only once', () => {
+    const big = createPattern(2000, 2000);
+    store.load(big);
+    for (let step = 0; step < 20; step++) {
+      store.apply({ ...store.pattern(), title: `Step ${step}` });
+    }
+
+    let undone = 0;
+    while (store.canUndo()) {
+      store.undo();
+      undone++;
+    }
+
+    expect(undone).toBe(20);
+  });
+
+  it('falls back to an existing colour when undo shrinks the palette', () => {
+    const small = { ...start, palette: ['#000000'] };
+    store.load(small);
+    store.apply({ ...small, palette: ['#000000', '#ffffff'] });
+    store.setColor(2);
+
+    store.undo();
+
+    expect(store.color()).toBe(1);
+  });
+
+  it('falls back to an existing colour when redo shrinks the palette', () => {
+    const large = { ...start, palette: ['#000000', '#ffffff'] };
+    store.load(large);
+    store.apply({ ...large, palette: ['#000000'] });
+    store.undo();
+    store.setColor(2);
+
+    store.redo();
+
+    expect(store.color()).toBe(1);
+  });
+
+  it('ignores undo and redo in the middle of a stroke', () => {
+    store.apply(drawn(start, 0));
+    const afterFirst = store.pattern();
+    store.undo();
+    store.redo();
+    store.undo();
+    store.beginStroke();
+    store.apply(drawn(store.pattern(), 1));
+    const during = store.pattern();
+
+    store.redo();
+    expect(store.pattern()).toBe(during);
+    store.undo();
+    expect(store.pattern()).toBe(during);
+
+    store.endStroke();
+    store.undo();
+    expect(store.pattern()).toBe(start);
+    expect(afterFirst).not.toBe(start);
+  });
+
   it('becomes dirty with a change and clean after saving', () => {
     store.apply(drawn(start, 0));
     expect(store.dirty()).toBe(true);
