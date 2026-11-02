@@ -63,10 +63,7 @@ export class EditorStore {
     if (next === previous) {
       return;
     }
-    this.current.set(next);
-    if (this.color() > next.palette.length) {
-      this.color.set(Math.max(1, next.palette.length));
-    }
+    this.show(next);
     if (!this.strokeBase) {
       this.remember(previous);
     }
@@ -154,19 +151,19 @@ export class EditorStore {
 
   undo(): void {
     const previous = this.undoStack().at(-1);
-    if (previous) {
+    if (previous && !this.strokeBase) {
       this.redoStack.update((stack) => [...stack, this.current()]);
       this.undoStack.update((stack) => stack.slice(0, -1));
-      this.current.set(previous);
+      this.show(previous);
     }
   }
 
   redo(): void {
     const next = this.redoStack().at(-1);
-    if (next) {
+    if (next && !this.strokeBase) {
       this.undoStack.update((stack) => [...stack, this.current()]);
       this.redoStack.update((stack) => stack.slice(0, -1));
-      this.current.set(next);
+      this.show(next);
     }
   }
 
@@ -175,14 +172,27 @@ export class EditorStore {
     this.saved.set(pattern);
   }
 
+  /** Shows a chart and keeps the active colour inside its palette. */
+  private show(pattern: Pattern): void {
+    this.current.set(pattern);
+    if (this.color() > pattern.palette.length) {
+      this.color.set(Math.max(1, pattern.palette.length));
+    }
+  }
+
   private remember(pattern: Pattern): void {
     this.redoStack.set([]);
     this.undoStack.update((stack) => {
       const steps = [...stack, pattern].slice(-MAX_HISTORY_STEPS);
+      const counted = new Set<readonly number[]>();
       let cells = 0;
       let oldest = steps.length - 1;
       for (let step = oldest; step >= 0; step--) {
-        cells += (steps[step] as Pattern).cells.length;
+        const stepCells = (steps[step] as Pattern).cells;
+        if (!counted.has(stepCells)) {
+          counted.add(stepCells);
+          cells += stepCells.length;
+        }
         if (cells > MAX_HISTORY_CELLS) {
           break;
         }

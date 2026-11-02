@@ -70,8 +70,8 @@ Conventions:
 
 ## Code comments
 
-Only real documentation comments: a TSDoc or Javadoc `/** */` on a class, function, module-level
-constant or at the top of a file. No narrative comments, no step-by-step comments, no `// note:` asides, in any
+Only real documentation comments: a TSDoc or Javadoc `/** */` on a class, interface, type, function,
+module-level constant or at the top of a file. No narrative comments, no step-by-step comments, no `// note:` asides, in any
 language and in config files too. Reasoning goes in the enclosing doc comment or in `docs/`. Do not
 add `eslint-disable` or `@SuppressWarnings` to get past a lint.
 
