@@ -44,7 +44,7 @@ export function panBy(viewport: Viewport, dx: number, dy: number): Viewport {
   return { ...viewport, offsetX: viewport.offsetX + dx, offsetY: viewport.offsetY + dy };
 }
 
-/** Follows two fingers: their distance zooms, their middle pans. */
+/** Follows two fingers: their distance zooms, their middle pans. On one spot they only pan. */
 export function pinch(
   viewport: Viewport,
   fromA: Point,
@@ -54,10 +54,11 @@ export function pinch(
 ): Viewport {
   const distance = (a: Point, b: Point) => Math.hypot(a[0] - b[0], a[1] - b[1]);
   const middle = (a: Point, b: Point): Point => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-  const before = middle(fromA, fromB);
+  const start = middle(fromA, fromB);
   const after = middle(toA, toB);
-  const panned = panBy(viewport, after[0] - before[0], after[1] - before[1]);
-  return zoomAt(panned, distance(toA, toB) / distance(fromA, fromB), after[0], after[1]);
+  const panned = panBy(viewport, after[0] - start[0], after[1] - start[1]);
+  const spread = distance(fromA, fromB);
+  return spread === 0 ? panned : zoomAt(panned, distance(toA, toB) / spread, after[0], after[1]);
 }
 
 /** Shows the whole chart centred in the window, with a margin on every side. */

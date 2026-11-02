@@ -67,6 +67,16 @@ describe('pinch', () => {
   });
 });
 
+describe('pinch with fingers on one spot', () => {
+  it('only pans instead of dividing by zero', () => {
+    const result = pinch(view, [100, 100], [100, 100], [110, 120], [130, 120]);
+
+    expect(result.scale).toBe(10);
+    expect(Number.isFinite(result.offsetX)).toBe(true);
+    expect(Number.isFinite(result.offsetY)).toBe(true);
+  });
+});
+
 describe('fitToWindow', () => {
   it('fits a chart and centres it', () => {
     const fitted = fitToWindow(100, 50, 1000, 1000, 0);
