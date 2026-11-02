@@ -49,6 +49,12 @@ function body(pattern: Pattern, version?: number) {
   };
 }
 
+/** The backend sends `null` for a chart without symbols; the model has no such field then. */
+function fromServer(stored: StoredPattern): StoredPattern {
+  const { symbols, ...pattern } = stored;
+  return symbols ? stored : pattern;
+}
+
 /** The pattern routes of the backend. */
 @Injectable({ providedIn: 'root' })
 export class PatternApi {
@@ -60,8 +66,8 @@ export class PatternApi {
     );
   }
 
-  get(id: string): Promise<StoredPattern> {
-    return firstValueFrom(this.http.get<StoredPattern>(`/api/patterns/${id}`));
+  async get(id: string): Promise<StoredPattern> {
+    return fromServer(await firstValueFrom(this.http.get<StoredPattern>(`/api/patterns/${id}`)));
   }
 
   create(pattern: Pattern): Promise<StoredPattern> {

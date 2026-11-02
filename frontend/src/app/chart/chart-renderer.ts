@@ -80,7 +80,7 @@ export function drawChart(
   ctx.fillStyle = theme.paper;
   ctx.fillRect(left, top, width, height);
   drawCells(ctx, pattern, viewport, range);
-  drawGrid(ctx, viewport, range, theme);
+  drawGrid(ctx, viewport, range, theme.gridMinor, theme.gridMajor);
   ctx.restore();
 
   if (!region) {
@@ -97,7 +97,8 @@ function intersect(a: CellRange, b: CellRange): CellRange {
   };
 }
 
-function drawCells(
+/** Draws the cells of a range; neighbours of one colour become one rectangle. */
+export function drawCells(
   ctx: ChartCanvasContext,
   pattern: Pattern,
   viewport: Viewport,
@@ -123,11 +124,13 @@ function drawCells(
   }
 }
 
-function drawGrid(
+/** Draws the lines of a range, leaving out what the scale would turn into noise. */
+export function drawGrid(
   ctx: ChartCanvasContext,
   viewport: Viewport,
   range: CellRange,
-  theme: ChartTheme,
+  minor: string,
+  major: string,
 ): void {
   const { scale, offsetX, offsetY } = viewport;
   const lines = (style: string, lineWidth: number, step: number) => {
@@ -147,10 +150,10 @@ function drawGrid(
     ctx.stroke();
   };
   if (scale >= MIN_GRID_SCALE) {
-    lines(theme.gridMinor, 1, 1);
+    lines(minor, 1, 1);
   }
   if (scale * MAJOR_STEP >= MIN_MAJOR_SPACING) {
-    lines(theme.gridMajor, 2, MAJOR_STEP);
+    lines(major, 2, MAJOR_STEP);
   }
 }
 

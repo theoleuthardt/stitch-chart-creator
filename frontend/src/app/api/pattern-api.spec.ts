@@ -64,6 +64,20 @@ describe('PatternApi', () => {
     expect((await loaded).id).toBe('a');
   });
 
+  it('turns a missing symbol layer into a field that does not exist', async () => {
+    const loaded = api.get('a');
+    http.expectOne('/api/patterns/a').flush({ id: 'a', symbols: null });
+
+    expect(await loaded).not.toHaveProperty('symbols');
+  });
+
+  it('keeps a symbol layer', async () => {
+    const loaded = api.get('a');
+    http.expectOne('/api/patterns/a').flush({ id: 'a', symbols: [1, 2] });
+
+    expect((await loaded).symbols).toEqual([1, 2]);
+  });
+
   it('deletes a pattern', async () => {
     const deleted = api.remove('a');
     const request = http.expectOne('/api/patterns/a');
