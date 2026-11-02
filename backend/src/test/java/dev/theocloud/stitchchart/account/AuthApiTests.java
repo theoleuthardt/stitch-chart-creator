@@ -162,6 +162,14 @@ class AuthApiTests {
   }
 
   @Test
+  void aVeryLongEmailWithManyLabelsIsRejected() throws Exception {
+    String hostile = "a@b" + ".c".repeat(100_000);
+
+    postJson("/api/auth/register", json(unique(), hostile, PASSWORD))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void emailsWithSubdomainsAreAccepted() throws Exception {
     postJson("/api/auth/register", json(unique(), unique() + "@mail.example.co.uk", PASSWORD))
         .andExpect(status().isCreated());
