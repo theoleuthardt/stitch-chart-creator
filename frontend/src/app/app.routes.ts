@@ -1,4 +1,15 @@
 import { Routes } from '@angular/router';
+import { authGuard, guestGuard } from './api/auth.guard';
+import { AccountSettings } from './features/account/account-settings';
+import { Register } from './features/auth/register';
+import { SignIn } from './features/auth/sign-in';
+import { Library } from './features/library/library';
 
 /** All screens of the app. */
-export const routes: Routes = [];
+export const routes: Routes = [
+  { path: '', component: Library, canActivate: [authGuard], title: 'Your charts' },
+  { path: 'account', component: AccountSettings, canActivate: [authGuard], title: 'Account' },
+  { path: 'sign-in', component: SignIn, canActivate: [guestGuard], title: 'Sign in' },
+  { path: 'register', component: Register, canActivate: [guestGuard], title: 'Create account' },
+  { path: '**', redirectTo: '' },
+];
