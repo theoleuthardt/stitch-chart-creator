@@ -33,7 +33,7 @@ const WHEEL_ZOOM = 1.0015;
       (pointerdown)="pointerDown($event)"
       (pointermove)="pointerMove($event)"
       (pointerup)="pointerUp($event)"
-      (pointercancel)="pointerUp($event)"
+      (pointercancel)="pointerCancel($event)"
       (contextmenu)="$event.preventDefault()"
     ></canvas>
   `,
@@ -119,7 +119,7 @@ export class ChartCanvas {
     event.preventDefault();
     this.canvas().nativeElement.setPointerCapture(event.pointerId);
     this.pointers.set(event.pointerId, [event.offsetX, event.offsetY]);
-    if (this.pointers.size === 2) {
+    if (this.pointers.size >= 2) {
       if (this.stroking) {
         this.stroking = false;
         this.strokeCancel.emit();
@@ -159,6 +159,16 @@ export class ChartCanvas {
     if (this.stroking) {
       this.stroking = false;
       this.strokeEnd.emit();
+    }
+  }
+
+  /** The system took the gesture away, for example because of a palm or a notification. */
+  pointerCancel(event: PointerEvent): void {
+    this.pointers.delete(event.pointerId);
+    this.panning = false;
+    if (this.stroking) {
+      this.stroking = false;
+      this.strokeCancel.emit();
     }
   }
 
