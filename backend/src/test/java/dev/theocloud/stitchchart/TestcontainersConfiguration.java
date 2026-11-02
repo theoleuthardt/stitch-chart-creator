@@ -6,13 +6,24 @@ import org.springframework.context.annotation.Bean;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-/** Starts the real PostgreSQL of the integration tests. */
+/**
+ * Starts the real PostgreSQL of the integration tests. One container serves every Spring context of
+ * a test run, and it is stopped with the last one.
+ */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
-  @Bean
+  private static final PostgreSQLContainer POSTGRES =
+      new PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"));
+
+  static {
+    POSTGRES.start();
+    Runtime.getRuntime().addShutdownHook(new Thread(POSTGRES::stop));
+  }
+
+  @Bean(destroyMethod = "")
   @ServiceConnection
   PostgreSQLContainer postgresContainer() {
-    return new PostgreSQLContainer(DockerImageName.parse("postgres:18-alpine"));
+    return POSTGRES;
   }
 }

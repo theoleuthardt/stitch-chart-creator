@@ -66,4 +66,15 @@ public class UserAccount {
   boolean isLocked(Instant now) {
     return lockedUntil != null && lockedUntil.isAfter(now);
   }
+
+  void updateProfile(String newUsername, String newEmail) {
+    username = newUsername;
+    email = newEmail;
+    updatedAt = Instant.now();
+  }
+
+  void changePasswordHash(String newPasswordHash) {
+    passwordHash = newPasswordHash;
+    updatedAt = Instant.now();
+  }
 }

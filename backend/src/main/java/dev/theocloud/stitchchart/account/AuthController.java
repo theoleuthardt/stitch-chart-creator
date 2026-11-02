@@ -34,7 +34,7 @@ class AuthController {
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
   UserResponse register(
-      @Valid @RequestBody AuthRequests.Register body,
+      @Valid @RequestBody AccountRequests.Register body,
       HttpServletRequest request,
       HttpServletResponse response) {
     UserAccount account = accountService.register(body);
@@ -44,7 +44,7 @@ class AuthController {
 
   @PostMapping("/login")
   UserResponse login(
-      @Valid @RequestBody AuthRequests.Login body,
+      @Valid @RequestBody AccountRequests.Login body,
       HttpServletRequest request,
       HttpServletResponse response) {
     UserAccount account = accountService.authenticate(body);

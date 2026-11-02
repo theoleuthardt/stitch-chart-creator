@@ -20,6 +20,13 @@ interface UserAccountRepository extends JpaRepository<UserAccount, UUID> {
   boolean emailExists(String email);
 
   @Query(
+      "select count(u) > 0 from UserAccount u where u.id <> ?1 and lower(u.username) = lower(?2)")
+  boolean usernameTakenByOther(UUID id, String username);
+
+  @Query("select count(u) > 0 from UserAccount u where u.id <> ?1 and lower(u.email) = lower(?2)")
+  boolean emailTakenByOther(UUID id, String email);
+
+  @Query(
       "select u from UserAccount u where lower(u.username) = lower(?1) or lower(u.email) = lower(?1)")
   Optional<UserAccount> findByLogin(String login);
 

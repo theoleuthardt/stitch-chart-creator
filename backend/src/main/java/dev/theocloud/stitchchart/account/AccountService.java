@@ -32,16 +32,16 @@ public class AccountService {
 
   /** Creates an account; a taken username or e-mail answers 409. */
   @Transactional
-  public UserAccount register(AuthRequests.Register request) {
+  public UserAccount register(AccountRequests.Register request) {
     if (accounts.usernameExists(request.username()) || accounts.emailExists(request.email())) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Username or e-mail is already taken");
+      throw taken();
     }
     try {
       return accounts.saveAndFlush(
           new UserAccount(
               request.username(), request.email(), passwordEncoder.encode(request.password())));
     } catch (DataIntegrityViolationException raceWithAnotherRegistration) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Username or e-mail is already taken");
+      throw taken();
     }
   }
 
@@ -50,7 +50,7 @@ public class AccountService {
    * the same 401, so that a response never reveals whether an account exists or is locked.
    */
   @Transactional(noRollbackFor = ResponseStatusException.class)
-  public UserAccount authenticate(AuthRequests.Login request) {
+  public UserAccount authenticate(AccountRequests.Login request) {
     Instant now = Instant.now();
     UserAccount account = accounts.findByLogin(request.username()).orElse(null);
     String hash = account == null ? unknownUserHash : account.getPasswordHash();
@@ -73,6 +73,48 @@ public class AccountService {
     return accounts
         .findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+  }
+
+  /** Changes username and e-mail; a value of another account answers 409. */
+  @Transactional
+  public UserAccount updateProfile(UUID id, AccountRequests.UpdateProfile request) {
+    if (accounts.usernameTakenByOther(id, request.username())
+        || accounts.emailTakenByOther(id, request.email())) {
+      throw taken();
+    }
+    UserAccount account = get(id);
+    account.updateProfile(request.username(), request.email());
+    try {
+      return accounts.saveAndFlush(account);
+    } catch (DataIntegrityViolationException raceWithAnotherAccount) {
+      throw taken();
+    }
+  }
+
+  /** Replaces the password after checking the current one. */
+  @Transactional
+  public void changePassword(UUID id, AccountRequests.ChangePassword request) {
+    UserAccount account = get(id);
+    requirePassword(account, request.currentPassword());
+    account.changePasswordHash(passwordEncoder.encode(request.newPassword()));
+  }
+
+  /** Deletes the account and everything that belongs to it after checking the password. */
+  @Transactional
+  public void delete(UUID id, AccountRequests.DeleteAccount request) {
+    UserAccount account = get(id);
+    requirePassword(account, request.password());
+    accounts.delete(account);
+  }
+
+  private void requirePassword(UserAccount account, String password) {
+    if (!passwordEncoder.matches(password, account.getPasswordHash())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password is wrong");
+    }
+  }
+
+  private static ResponseStatusException taken() {
+    return new ResponseStatusException(HttpStatus.CONFLICT, "Username or e-mail is already taken");
   }
 
   private static ResponseStatusException invalidCredentials() {
