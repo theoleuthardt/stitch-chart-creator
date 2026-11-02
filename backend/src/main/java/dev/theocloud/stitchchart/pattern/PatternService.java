@@ -57,9 +57,12 @@ class PatternService {
     }
   }
 
+  /** Deletes in one statement, so that a save running at the same time cannot get in the way. */
   @Transactional
   void delete(UUID ownerId, UUID id) {
-    patterns.delete(find(ownerId, id));
+    if (patterns.deleteOwned(id, ownerId) == 0) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
   }
 
   private ChartPattern find(UUID ownerId, UUID id) {
