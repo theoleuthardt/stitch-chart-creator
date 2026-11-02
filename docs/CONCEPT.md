@@ -81,7 +81,8 @@ interface Pattern {
 
 `cells` is a flat array on purpose: it saves memory and turns mirroring and rotation into index
 arithmetic instead of object traversal. In Postgres `cells` and `symbols` are `integer[]`, which the
-database compresses by itself, and `palette` is `jsonb`.
+database compresses by itself, and `palette` is `text[]`. A list entry carries a small PNG thumbnail
+that the browser renders when it saves, so the library never has to load whole charts.
 
 ## API
 

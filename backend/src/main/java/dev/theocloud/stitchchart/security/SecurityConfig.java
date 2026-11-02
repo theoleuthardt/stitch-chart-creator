@@ -1,5 +1,6 @@
 package dev.theocloud.stitchchart.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 
 /**
  * Session cookie authentication for the single-page app: sessions live in Postgres, the CSRF token
@@ -23,7 +25,10 @@ class SecurityConfig {
 
   @Bean
   SecurityFilterChain securityFilterChain(
-      HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
+      HttpSecurity http,
+      SecurityContextRepository securityContextRepository,
+      @Value("${app.max-request-bytes}") long maxRequestBytes)
+      throws Exception {
     return http.authorizeHttpRequests(requests ->
             requests
                 .requestMatchers("/api/health", "/api/share/**")
@@ -42,6 +47,7 @@ class SecurityConfig {
                 .logoutSuccessHandler(
                     new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
         .addFilterBefore(new AuthRateLimitFilter(), AnonymousAuthenticationFilter.class)
+        .addFilterBefore(new RequestSizeLimitFilter(maxRequestBytes), CsrfFilter.class)
         .build();
   }
 
