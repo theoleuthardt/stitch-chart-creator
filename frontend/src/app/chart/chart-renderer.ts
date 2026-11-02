@@ -73,8 +73,16 @@ export function drawChart(
 
   ctx.save();
   if (region) {
+    const clipLeft = Math.max(left, GUTTER);
+    const clipTop = Math.max(top, GUTTER);
+    const clipWidth = left + width - clipLeft;
+    const clipHeight = top + height - clipTop;
+    if (clipWidth <= 0 || clipHeight <= 0) {
+      ctx.restore();
+      return;
+    }
     ctx.beginPath();
-    ctx.rect(left, top, width, height);
+    ctx.rect(clipLeft, clipTop, clipWidth, clipHeight);
     ctx.clip();
   }
   ctx.fillStyle = theme.paper;

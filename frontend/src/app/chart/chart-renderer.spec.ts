@@ -1,5 +1,5 @@
 import { createPattern, Pattern } from '../domain/pattern';
-import { changedRegion, ChartCanvasContext, ChartTheme, drawChart } from './chart-renderer';
+import { changedRegion, ChartCanvasContext, ChartTheme, drawChart, GUTTER } from './chart-renderer';
 
 const theme: ChartTheme = {
   paper: 'white',
@@ -20,6 +20,7 @@ class Recorder implements ChartCanvasContext {
   lines: { style: string; width: number; segments: number }[] = [];
   texts: string[] = [];
   clipped = false;
+  clipRect: { x: number; y: number; w: number; h: number } | null = null;
   private segments = 0;
 
   fillRect(x: number, y: number, w: number, h: number) {
@@ -46,8 +47,8 @@ class Recorder implements ChartCanvasContext {
   restore() {
     return undefined;
   }
-  rect() {
-    return undefined;
+  rect(x: number, y: number, w: number, h: number) {
+    this.clipRect = { x, y, w, h };
   }
   clip() {
     this.clipped = true;
@@ -134,7 +135,9 @@ describe('drawChart', () => {
   it('limits a redraw to the changed region', () => {
     const ctx = new Recorder();
 
-    drawChart(ctx, chart([1, 1, 1, 1], 4), view, size, theme, {
+    const inTheOpen = { scale: 10, offsetX: 40, offsetY: 40 };
+
+    drawChart(ctx, chart([1, 1, 1, 1], 4), inTheOpen, size, theme, {
       fromX: 1,
       toX: 2,
       fromY: 0,
@@ -142,8 +145,37 @@ describe('drawChart', () => {
     });
 
     expect(ctx.clipped).toBe(true);
-    expect(colored(ctx)).toEqual([{ style: '#ff0000', x: 10, y: 0, w: 20, h: 10 }]);
+    expect(colored(ctx)).toEqual([{ style: '#ff0000', x: 50, y: 40, w: 20, h: 10 }]);
     expect(ctx.texts).toEqual([]);
+  });
+
+  it('keeps a redraw out of the number strips', () => {
+    const ctx = new Recorder();
+
+    const cells = new Array<number>(16).fill(1);
+
+    drawChart(ctx, chart(cells, 4), { ...view, offsetX: -5, offsetY: -5 }, size, theme, {
+      fromX: 0,
+      toX: 3,
+      fromY: 0,
+      toY: 3,
+    });
+
+    expect(ctx.clipRect?.x).toBe(GUTTER);
+    expect(ctx.clipRect?.y).toBe(GUTTER);
+  });
+
+  it('draws nothing for a region completely under the number strips', () => {
+    const ctx = new Recorder();
+
+    drawChart(ctx, chart([1], 1), { ...view, offsetX: -20, offsetY: -20 }, size, theme, {
+      fromX: 0,
+      toX: 0,
+      fromY: 0,
+      toY: 0,
+    });
+
+    expect(ctx.fills).toEqual([]);
   });
 
   it('skips a cell whose colour is missing instead of failing', () => {
