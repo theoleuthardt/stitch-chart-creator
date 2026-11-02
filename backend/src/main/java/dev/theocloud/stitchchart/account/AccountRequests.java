@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 final class AccountRequests {
 
   private static final String USERNAME = "[A-Za-z0-9_.-]+";
-  private static final String EMAIL = "[^@\\s]+@[^@\\s]+\\.[^@\\s]+";
+  private static final String EMAIL = "[^@\\s]+@[^@\\s.]+(\\.[^@\\s.]+)+";
 
   private AccountRequests() {}
 

@@ -1,6 +1,7 @@
 package dev.theocloud.stitchchart.account;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.theocloud.stitchchart.IntegrationTest;
 import jakarta.servlet.http.Cookie;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -146,6 +148,23 @@ class AuthApiTests {
         .andExpect(status().isBadRequest());
     postJson("/api/auth/register", json(unique(), unique() + "@example.com", "too short"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void aHostileEmailIsRejectedQuickly() throws Exception {
+    String hostile = "a@" + ".".repeat(200_000) + "@";
+
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(2),
+        () ->
+            postJson("/api/auth/register", json(unique(), hostile, PASSWORD))
+                .andExpect(status().isBadRequest()));
+  }
+
+  @Test
+  void emailsWithSubdomainsAreAccepted() throws Exception {
+    postJson("/api/auth/register", json(unique(), unique() + "@mail.example.co.uk", PASSWORD))
+        .andExpect(status().isCreated());
   }
 
   @Test
