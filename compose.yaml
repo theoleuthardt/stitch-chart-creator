@@ -1,0 +1,14 @@
+services:
+  db:
+    image: docker.io/library/postgres:18-alpine
+    environment:
+      POSTGRES_DB: stitchcharts
+      POSTGRES_USER: stitchcharts
+      POSTGRES_PASSWORD: stitchcharts
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - db_data:/var/lib/postgresql:U
+
+volumes:
+  db_data:

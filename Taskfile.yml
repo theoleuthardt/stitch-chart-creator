@@ -1,0 +1,138 @@
+version: '3'
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  install:
+    desc: Install the frontend dependencies
+    cmds:
+      - task: frontend:install
+
+  test:
+    desc: Run the frontend and backend tests
+    cmds:
+      - task: frontend:test
+      - task: backend:test
+
+  lint:
+    desc: Lint the frontend and backend
+    cmds:
+      - task: frontend:lint
+      - task: backend:lint
+
+  format:
+    desc: Format the frontend and backend
+    cmds:
+      - task: frontend:format
+      - task: backend:format
+
+  build:
+    desc: Build the frontend and backend
+    cmds:
+      - task: frontend:build
+      - task: backend:build
+
+  check:
+    desc: Lint, format check, tests and build
+    cmds:
+      - task: lint
+      - task: frontend:format:check
+      - task: test
+      - task: build
+
+  audit:
+    desc: Scan the frontend runtime dependencies for known vulnerabilities
+    dir: frontend
+    cmds:
+      - npm audit --omit=dev
+
+  db:up:
+    desc: Start the local Postgres
+    cmds:
+      - podman compose up -d db
+
+  db:down:
+    desc: Stop the local Postgres
+    cmds:
+      - podman compose down
+
+  frontend:install:
+    desc: Install the frontend dependencies
+    dir: frontend
+    cmds:
+      - npm ci
+
+  frontend:dev:
+    desc: Start the Angular dev server, /api goes to the backend
+    dir: frontend
+    cmds:
+      - npm start
+
+  frontend:build:
+    desc: Build the production bundle
+    dir: frontend
+    cmds:
+      - npm run build
+
+  frontend:test:
+    desc: Run the frontend unit tests
+    dir: frontend
+    cmds:
+      - npm test
+
+  frontend:test:watch:
+    desc: Run the frontend unit tests in watch mode
+    dir: frontend
+    cmds:
+      - npm run test:watch
+
+  frontend:lint:
+    desc: Run ESLint
+    dir: frontend
+    cmds:
+      - npm run lint
+
+  frontend:format:
+    desc: Format the frontend with Prettier
+    dir: frontend
+    cmds:
+      - npm run format
+
+  frontend:format:check:
+    desc: Check the frontend formatting without changing files
+    dir: frontend
+    cmds:
+      - npm run format:check
+
+  backend:dev:
+    desc: Start Spring Boot against the local Postgres
+    dir: backend
+    cmds:
+      - ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+  backend:build:
+    desc: Build the backend jar without running the tests
+    dir: backend
+    cmds:
+      - ./mvnw -B package -DskipTests
+
+  backend:test:
+    desc: Run the backend tests against a real Postgres in a container
+    dir: backend
+    cmds:
+      - ./mvnw -B test
+
+  backend:lint:
+    desc: Check the Java formatting
+    dir: backend
+    cmds:
+      - ./mvnw -B spotless:check
+
+  backend:format:
+    desc: Format the Java code
+    dir: backend
+    cmds:
+      - ./mvnw -B spotless:apply

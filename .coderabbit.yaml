@@ -1,0 +1,32 @@
+reviews:
+  profile: assertive
+  path_instructions:
+    - path: 'frontend/src/app/domain/**/*.ts'
+      instructions: >
+        This folder is pure logic: flag any Angular import or DOM access. Check index arithmetic on
+        the flat cells array, and that every behaviour has a unit test.
+    - path: 'frontend/src/app/**/*.ts'
+      instructions: >
+        Flag narrative comments; only TSDoc on classes, functions and module-level constants is
+        allowed (see CLAUDE.md). Data from imported files must be validated where it enters the app.
+    - path: 'frontend/src/app/features/**/*'
+      instructions: >
+        Components hold UI state only; logic belongs in src/app/domain. Flag literal colours outside
+        chart data and any per-cell DOM rendering.
+    - path: 'backend/src/main/java/**/*.java'
+      instructions: >
+        Flag narrative comments; only Javadoc is allowed (see CLAUDE.md). Controllers parse, validate
+        and delegate; flag business logic in them. Every route on user data must check ownership and
+        answer 404 for a foreign resource. Flag secrets or password hashes that could reach a log or
+        a response, and hand-built SQL.
+    - path: 'backend/src/main/resources/db/changelog/**/*'
+      instructions: >
+        Changesets are immutable once merged and need a rollback. Flag silent data loss, and foreign
+        keys without an index or a deliberate delete rule.
+
+tone_instructions: >
+  Prioritize correctness, security and maintainability over style. Call out premature abstraction as
+  directly as a bug. Be specific: name the file, line and failure mode.
+
+chat:
+  auto_reply: true
