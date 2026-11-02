@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, HostListener, inject, viewChild } f
 import { createPattern } from '../../domain/pattern';
 import { ChartCanvas } from './chart-canvas';
 import { EditorStore, Tool } from './editor-store';
+import { PalettePanel } from './palette-panel';
 import { shortcutFor } from './shortcuts';
 
 /** The editor screen around the chart. */
 @Component({
   selector: 'scc-editor',
-  imports: [ChartCanvas],
+  imports: [ChartCanvas, PalettePanel],
   providers: [EditorStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -37,13 +38,16 @@ import { shortcutFor } from './shortcuts';
         <button class="button" type="button" (click)="canvas().zoom(0.8)">Zoom out</button>
         <button class="button" type="button" (click)="canvas().fit()">Fit</button>
       </div>
-      <scc-chart-canvas
-        [pattern]="store.pattern()"
-        (strokeStart)="store.strokeStart($event)"
-        (strokeMove)="store.strokeMove($event)"
-        (strokeEnd)="store.strokeEnd()"
-        (strokeCancel)="store.strokeCancel()"
-      />
+      <div class="workspace">
+        <scc-chart-canvas
+          [pattern]="store.pattern()"
+          (strokeStart)="store.strokeStart($event)"
+          (strokeMove)="store.strokeMove($event)"
+          (strokeEnd)="store.strokeEnd()"
+          (strokeCancel)="store.strokeCancel()"
+        />
+        <scc-palette-panel />
+      </div>
     </div>
   `,
   styles: `
@@ -77,9 +81,22 @@ import { shortcutFor } from './shortcuts';
       color: var(--color-accent);
     }
 
-    scc-chart-canvas {
+    .workspace {
+      display: flex;
       flex: 1;
       min-height: 0;
+    }
+
+    scc-chart-canvas {
+      flex: 1;
+      min-width: 0;
+    }
+
+    scc-palette-panel {
+      flex: none;
+      width: 15rem;
+      border-left: 1px solid var(--color-border);
+      background: var(--color-surface);
     }
   `,
 })
