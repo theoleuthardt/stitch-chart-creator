@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Pattern } from '../../domain/pattern';
 import { downloadFile, fileName } from '../../export/download';
 import { canvasFits, exportLayout, ExportOptions } from '../../export/image-layout';
 import { serializePattern } from '../../export/pattern-file';
@@ -6,6 +7,7 @@ import { Paper, pdfLayout, PdfOptions } from '../../export/pdf-layout';
 import { renderPdf } from '../../export/to-pdf';
 import { renderPng } from '../../export/to-png';
 import { renderSvg } from '../../export/to-svg';
+import { fitsExcel, renderXlsx } from '../../export/to-xlsx';
 import { EditorStore } from './editor-store';
 
 /** Turns the open chart into files. */
@@ -80,6 +82,7 @@ import { EditorStore } from './editor-store';
       <button class="button" type="button" [disabled]="!fits()" (click)="exportPng()">PNG</button>
       <button class="button" type="button" (click)="exportSvg()">SVG</button>
       <button class="button" type="button" [disabled]="busy()" (click)="exportPdf()">PDF</button>
+      <button class="button" type="button" [disabled]="busy()" (click)="exportXlsx()">Excel</button>
       <button class="button" type="button" (click)="exportJson()">Chart file</button>
     </div>
   `,
@@ -158,26 +161,36 @@ export class ExportPanel {
     this.pdf.update((pdf) => ({ ...pdf, landscape }));
   }
 
-  async exportPdf(): Promise<void> {
+  exportPdf(): Promise<void> {
+    return this.export('pdf', (pattern) => renderPdf(pattern, this.pdf()));
+  }
+
+  exportPng(): Promise<void> {
+    return this.export('png', (pattern) => renderPng(pattern, this.options()));
+  }
+
+  exportXlsx(): Promise<void> {
+    if (!fitsExcel(this.store.pattern())) {
+      this.error.set('This chart is larger than an Excel worksheet.');
+      return Promise.resolve();
+    }
+    return this.export('xlsx', renderXlsx);
+  }
+
+  /** Runs one export at a time and shows why one failed. */
+  private async export(
+    extension: string,
+    render: (pattern: Pattern) => Promise<Blob>,
+  ): Promise<void> {
     const pattern = this.store.pattern();
     this.error.set(null);
     this.busy.set(true);
     try {
-      downloadFile(fileName(pattern.title, 'pdf'), await renderPdf(pattern, this.pdf()));
+      downloadFile(fileName(pattern.title, extension), await render(pattern));
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'The export failed.');
     } finally {
       this.busy.set(false);
-    }
-  }
-
-  async exportPng(): Promise<void> {
-    const pattern = this.store.pattern();
-    this.error.set(null);
-    try {
-      downloadFile(fileName(pattern.title, 'png'), await renderPng(pattern, this.options()));
-    } catch (error) {
-      this.error.set(error instanceof Error ? error.message : 'The export failed.');
     }
   }
 

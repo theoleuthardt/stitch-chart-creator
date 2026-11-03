@@ -40,6 +40,14 @@ describe('ExportPanel', () => {
     expect(panel.pdfPages()).toBeLessThan(portrait);
   });
 
+  it('explains when a chart does not fit on a worksheet', async () => {
+    const panel = setup(20_000, 1);
+
+    await panel.exportXlsx();
+
+    expect(panel.error()).toBe('This chart is larger than an Excel worksheet.');
+  });
+
   it('ignores an invalid cell size', () => {
     const panel = setup(10, 10);
 
