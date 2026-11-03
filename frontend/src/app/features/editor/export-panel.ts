@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { downloadFile, fileName } from '../../export/download';
 import { canvasFits, exportLayout, ExportOptions } from '../../export/image-layout';
 import { serializePattern } from '../../export/pattern-file';
+import { Paper, pdfLayout, PdfOptions } from '../../export/pdf-layout';
+import { renderPdf } from '../../export/to-pdf';
 import { renderPng } from '../../export/to-png';
 import { renderSvg } from '../../export/to-svg';
 import { EditorStore } from './editor-store';
@@ -48,6 +50,24 @@ import { EditorStore } from './editor-store';
       Colour legend
     </label>
     <p class="muted" role="status">{{ size().width }} × {{ size().height }} px</p>
+    <div class="paper">
+      <label class="field" for="export-paper">
+        <span>Paper</span>
+        <select id="export-paper" (change)="setPaper($any($event.target).value)">
+          <option value="a4">A4</option>
+          <option value="letter">Letter</option>
+        </select>
+      </label>
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="pdf().landscape"
+          (change)="setLandscape($any($event.target).checked)"
+        />
+        Landscape
+      </label>
+    </div>
+    <p class="muted">PDF: {{ pdfPages() }} {{ pdfPages() === 1 ? 'page' : 'pages' }} plus legend</p>
     @if (!fits()) {
       <p class="error" role="alert">
         This image is too large for a browser. Choose fewer pixels per stitch.
@@ -59,6 +79,7 @@ import { EditorStore } from './editor-store';
     <div class="actions">
       <button class="button" type="button" [disabled]="!fits()" (click)="exportPng()">PNG</button>
       <button class="button" type="button" (click)="exportSvg()">SVG</button>
+      <button class="button" type="button" [disabled]="busy()" (click)="exportPdf()">PDF</button>
       <button class="button" type="button" (click)="exportJson()">Chart file</button>
     </div>
   `,
@@ -77,6 +98,12 @@ import { EditorStore } from './editor-store';
 
     .field {
       margin-bottom: 0.5rem;
+    }
+
+    .paper {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .check {
@@ -106,6 +133,9 @@ export class ExportPanel {
     numbers: true,
     legend: true,
   });
+  readonly pdf = signal<PdfOptions>({ paper: 'a4', landscape: false });
+  readonly pdfPages = computed(() => pdfLayout(this.store.pattern(), this.pdf()).pages.length);
+  readonly busy = signal(false);
   readonly error = signal<string | null>(null);
   readonly size = computed(() => exportLayout(this.store.pattern(), this.options()));
   readonly fits = computed(() => canvasFits(this.size().width, this.size().height));
@@ -118,6 +148,27 @@ export class ExportPanel {
 
   set(option: 'gridLines' | 'numbers' | 'legend', value: boolean): void {
     this.options.update((options) => ({ ...options, [option]: value }));
+  }
+
+  setPaper(paper: Paper): void {
+    this.pdf.update((pdf) => ({ ...pdf, paper }));
+  }
+
+  setLandscape(landscape: boolean): void {
+    this.pdf.update((pdf) => ({ ...pdf, landscape }));
+  }
+
+  async exportPdf(): Promise<void> {
+    const pattern = this.store.pattern();
+    this.error.set(null);
+    this.busy.set(true);
+    try {
+      downloadFile(fileName(pattern.title, 'pdf'), await renderPdf(pattern, this.pdf()));
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'The export failed.');
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   async exportPng(): Promise<void> {

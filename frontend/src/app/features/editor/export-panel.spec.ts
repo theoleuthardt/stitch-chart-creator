@@ -27,6 +27,19 @@ describe('ExportPanel', () => {
     expect(panel.fits()).toBe(false);
   });
 
+  it('tells how many pages a PDF gets', () => {
+    expect(setup(200, 300).pdfPages()).toBeGreaterThan(1);
+  });
+
+  it('counts the pages for the chosen paper', () => {
+    const panel = setup(100, 40);
+    const portrait = panel.pdfPages();
+
+    panel.setLandscape(true);
+
+    expect(panel.pdfPages()).toBeLessThan(portrait);
+  });
+
   it('ignores an invalid cell size', () => {
     const panel = setup(10, 10);
 
