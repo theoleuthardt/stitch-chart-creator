@@ -1,4 +1,5 @@
 import { colorUsage, Pattern } from '../domain/pattern';
+import { cellAspect, usedSymbols } from '../domain/symbols';
 
 /** What an exported image shows. */
 export interface ExportOptions {
@@ -12,6 +13,7 @@ export interface ExportOptions {
 export interface ExportLayout {
   width: number;
   height: number;
+  cellHeight: number;
   chartX: number;
   chartY: number;
   legendY: number;
@@ -57,13 +59,15 @@ export function usedColors(pattern: Pattern): LegendEntry[] {
 /** Works out where the parts of an exported image go. */
 export function exportLayout(pattern: Pattern, options: ExportOptions): ExportLayout {
   const strip = options.numbers ? NUMBER_STRIP : 0;
+  const cellHeight = Math.round(options.cellSize * cellAspect(pattern.craftType));
   const chartWidth = strip + pattern.width * options.cellSize;
-  const chartHeight = strip + pattern.height * options.cellSize;
-  const legendRows = options.legend ? usedColors(pattern).length : 0;
+  const chartHeight = strip + pattern.height * cellHeight;
+  const legendRows = options.legend ? usedColors(pattern).length + usedSymbols(pattern).length : 0;
   const legendHeight = options.legend ? LEGEND_PADDING * 2 + legendRows * LEGEND_ROW : 0;
   return {
     width: options.legend ? Math.max(chartWidth, LEGEND_WIDTH) : chartWidth,
     height: chartHeight + legendHeight,
+    cellHeight,
     chartX: strip,
     chartY: strip,
     legendY: chartHeight,

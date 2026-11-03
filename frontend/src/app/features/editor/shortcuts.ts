@@ -10,6 +10,7 @@ const TOOL_KEYS: Readonly<Record<string, Tool>> = {
   i: 'picker',
   l: 'line',
   r: 'rectangle',
+  s: 'symbol',
 };
 
 /** Finds the shortcut of a key press. Other combinations stay with the browser. */

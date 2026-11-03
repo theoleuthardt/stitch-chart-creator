@@ -58,19 +58,29 @@ describe('Library', () => {
 
   it('creates a chart and opens it', async () => {
     const { fixture, api, navigate } = await setup();
-    fixture.componentInstance.newChart.setValue({ title: 'Tulip', width: 10, height: 12 });
+    fixture.componentInstance.newChart.setValue({
+      title: 'Tulip',
+      craftType: 'knitting',
+      width: 10,
+      height: 12,
+    });
 
     await fixture.componentInstance.create();
 
     expect(api.create).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Tulip', width: 10, height: 12 }),
+      expect.objectContaining({ title: 'Tulip', craftType: 'knitting', width: 10, height: 12 }),
     );
     expect(navigate).toHaveBeenCalledWith('/charts/new');
   });
 
   it('refuses an impossible size', async () => {
     const { fixture, api } = await setup();
-    fixture.componentInstance.newChart.setValue({ title: 'Tulip', width: 0, height: 12 });
+    fixture.componentInstance.newChart.setValue({
+      title: 'Tulip',
+      craftType: 'crossStitch',
+      width: 0,
+      height: 12,
+    });
 
     await fixture.componentInstance.create();
 
@@ -79,7 +89,12 @@ describe('Library', () => {
 
   it('refuses a size that is not a whole number', async () => {
     const { fixture, api } = await setup();
-    fixture.componentInstance.newChart.setValue({ title: 'Tulip', width: 2.5, height: 12 });
+    fixture.componentInstance.newChart.setValue({
+      title: 'Tulip',
+      craftType: 'crossStitch',
+      width: 2.5,
+      height: 12,
+    });
 
     await fixture.componentInstance.create();
 

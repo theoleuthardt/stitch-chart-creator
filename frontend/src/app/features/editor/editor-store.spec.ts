@@ -403,6 +403,42 @@ describe('EditorStore', () => {
       expect(cells().every((cell) => cell === 0)).toBe(true);
     });
 
+    it('places the active symbol and keeps the colour', () => {
+      store.load({ ...createPattern(3, 1, 'knitting'), palette: ['#000000'], cells: [1, 0, 0] });
+      store.setSymbol(7);
+      store.setTool('symbol');
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([1, 0]);
+      store.strokeEnd();
+
+      expect(store.pattern().symbols).toEqual([7, 7, 0]);
+      expect(cells()).toEqual([1, 0, 0]);
+    });
+
+    it('mirrors symbols too', () => {
+      store.load(createPattern(3, 1, 'knitting'));
+      store.setSymmetry({ horizontal: true, vertical: false });
+      store.setSymbol(7);
+      store.setTool('symbol');
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+
+      expect(store.pattern().symbols).toEqual([7, 0, 7]);
+    });
+
+    it('erases the symbol with the colour', () => {
+      store.load({ ...createPattern(2, 1, 'knitting'), cells: [1, 1], symbols: [7, 7] });
+      store.setTool('eraser');
+
+      store.strokeStart([0, 0]);
+      store.strokeEnd();
+
+      expect(cells()).toEqual([0, 1]);
+      expect(store.pattern().symbols).toEqual([0, 7]);
+    });
+
     it('ignores strokes outside the chart', () => {
       store.strokeStart([-1, -1]);
       store.strokeEnd();

@@ -1,10 +1,11 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { createPattern, floodFill, getCell, Pattern, setCells } from '../../domain/pattern';
 import { Cell, linePoints, rectanglePoints } from '../../domain/shapes';
+import { setSymbols } from '../../domain/symbols';
 import { Symmetry, withSymmetry } from '../../domain/symmetry';
 
 /** The tools of the editor. */
-export type Tool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rectangle';
+export type Tool = 'pencil' | 'eraser' | 'fill' | 'picker' | 'line' | 'rectangle' | 'symbol';
 
 /** Undo steps kept at most. */
 const MAX_HISTORY_STEPS = 100;
@@ -28,6 +29,7 @@ export class EditorStore {
 
   readonly tool = signal<Tool>('pencil');
   readonly color = signal(1);
+  readonly symbol = signal(0);
   readonly symmetry = signal<Symmetry>({ horizontal: false, vertical: false });
   readonly pattern = this.current.asReadonly();
   readonly canUndo = computed(() => this.undoStack().length > 0);
@@ -50,6 +52,10 @@ export class EditorStore {
 
   setColor(color: number): void {
     this.color.set(color);
+  }
+
+  setSymbol(symbol: number): void {
+    this.symbol.set(symbol);
   }
 
   setSymmetry(symmetry: Symmetry): void {
@@ -117,6 +123,7 @@ export class EditorStore {
     switch (this.tool()) {
       case 'pencil':
       case 'eraser':
+      case 'symbol':
         this.paint(this.current(), linePoints(...this.last, x, y));
         this.last = cell;
         break;
@@ -142,17 +149,22 @@ export class EditorStore {
     }
   }
 
+  /** Puts the active tool on cells: colours, symbols, or for the eraser both. */
   private paint(base: Pattern, points: readonly Cell[]): void {
-    this.apply(setCells(base, this.mirrored(points), this.strokeValue()));
+    const cells = this.mirrored(points);
+    const tool = this.tool();
+    if (tool === 'symbol') {
+      this.apply(setSymbols(base, cells, this.symbol()));
+    } else if (tool === 'eraser') {
+      this.apply(setSymbols(setCells(base, cells, 0), cells, 0));
+    } else {
+      this.apply(setCells(base, cells, this.color()));
+    }
   }
 
   private mirrored(points: readonly Cell[]): Cell[] {
     const { width, height } = this.current();
     return withSymmetry(points, width, height, this.symmetry());
-  }
-
-  private strokeValue(): number {
-    return this.tool() === 'eraser' ? 0 : this.color();
   }
 
   private pick(x: number, y: number): void {

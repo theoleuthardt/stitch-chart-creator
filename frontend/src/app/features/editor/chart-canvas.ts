@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { changedRegion, ChartTheme, drawChart, GUTTER } from '../../chart/chart-renderer';
 import { Pattern } from '../../domain/pattern';
+import { cellAspect } from '../../domain/symbols';
 import { cellAt, fitToWindow, panBy, pinch, Point, Viewport, zoomAt } from '../../domain/viewport';
 
 /** How much one wheel step zooms. */
@@ -106,8 +107,17 @@ export class ChartCanvas {
 
   /** Shows the whole chart. */
   fit(): void {
-    const { width, height } = this.pattern();
-    this.viewport.set(fitToWindow(width, height, this.size.width, this.size.height, GUTTER + 16));
+    const { width, height, craftType } = this.pattern();
+    this.viewport.set(
+      fitToWindow(
+        width,
+        height,
+        this.size.width,
+        this.size.height,
+        GUTTER + 16,
+        cellAspect(craftType),
+      ),
+    );
   }
 
   /** Zooms around the middle of the window. */

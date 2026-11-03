@@ -10,6 +10,7 @@ describe('shortcutFor', () => {
     expect(shortcutFor(key({ key: 'i' }))).toEqual({ tool: 'picker' });
     expect(shortcutFor(key({ key: 'l' }))).toEqual({ tool: 'line' });
     expect(shortcutFor(key({ key: 'r' }))).toEqual({ tool: 'rectangle' });
+    expect(shortcutFor(key({ key: 's' }))).toEqual({ tool: 'symbol' });
   });
 
   it('maps undo and redo with ctrl and with cmd', () => {

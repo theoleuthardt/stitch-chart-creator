@@ -48,6 +48,29 @@ describe('exportLayout', () => {
   });
 });
 
+describe('stitches that are not square', () => {
+  const knitted: Pattern = {
+    ...createPattern(10, 10, 'knitting'),
+    symbols: new Array<number>(100).fill(0),
+  };
+
+  it('uses the height of a stitch of the craft', () => {
+    const layout = exportLayout(knitted, options);
+
+    expect(layout.cellHeight).toBe(8);
+    expect(layout.height).toBe(80);
+    expect(layout.width).toBe(100);
+  });
+
+  it('adds a legend row per used symbol', () => {
+    const symbols = new Array<number>(100).fill(0);
+    symbols[0] = 1;
+    symbols[1] = 2;
+
+    expect(exportLayout({ ...knitted, symbols }, { ...options, legend: true }).legendRows).toBe(2);
+  });
+});
+
 describe('usedColors', () => {
   it('lists the colours in use with their stitch counts', () => {
     expect(usedColors(pattern)).toEqual([

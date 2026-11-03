@@ -199,6 +199,7 @@ class PatternApiTests {
       VALID.replace("[0,1,2,0]", "[0,1,-1,0]"),
       VALID.replace("\"#ff0000\"", "\"red\""),
       VALID.replace("\"cells\":[0,1,2,0]", "\"cells\":[0,1,2,0],\"symbols\":[1]"),
+      VALID.replace("\"cells\":[0,1,2,0]", "\"cells\":[0,1,2,0],\"symbols\":[0,0,0,-1]"),
       VALID.replace("\"cells\":[0,1,2,0]", "\"cells\":[0,1,2,0],\"thumbnail\":\"javascript:x\""),
       VALID.replace(
           "\"cells\":[0,1,2,0]",

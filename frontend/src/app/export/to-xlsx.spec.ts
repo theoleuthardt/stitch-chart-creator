@@ -37,6 +37,22 @@ describe('excelSheets', () => {
     expect(chart?.[1]?.[0]).toMatchObject({ backgroundColor: '#00ff00' });
   });
 
+  it('writes the abbreviation of a symbol into its cell', () => {
+    const knitted = { ...createPattern(2, 1, 'knitting'), symbols: [1, 0] };
+
+    expect(excelSheets(knitted)[0]?.data[0]?.[0]).toMatchObject({ value: 'k' });
+    expect(excelSheets(knitted)[0]?.data[0]?.[1]).toBeNull();
+  });
+
+  it('lists the symbols in the legend', () => {
+    const knitted = { ...createPattern(2, 1, 'knitting'), symbols: [1, 1] };
+
+    const rows = excelSheets(knitted)[1]?.data;
+
+    expect(rows?.at(-1)?.[1]).toMatchObject({ value: 'k' });
+    expect(rows?.at(-1)?.[2]).toMatchObject({ value: 2 });
+  });
+
   it('makes the cells square', () => {
     const [chart] = excelSheets(pattern);
 

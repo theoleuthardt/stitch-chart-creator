@@ -1,4 +1,5 @@
 import { createPattern, Pattern } from '../domain/pattern';
+import { SYMBOLS } from '../domain/symbols';
 import { changedRegion, ChartCanvasContext, ChartTheme, drawChart, GUTTER } from './chart-renderer';
 
 const theme: ChartTheme = {
@@ -52,6 +53,9 @@ class Recorder implements ChartCanvasContext {
   }
   clip() {
     this.clipped = true;
+  }
+  arc() {
+    return undefined;
   }
 }
 
@@ -176,6 +180,46 @@ describe('drawChart', () => {
     });
 
     expect(ctx.fills).toEqual([]);
+  });
+
+  it('draws symbols over the cells when zoomed in', () => {
+    const ctx = new Recorder();
+    const knit = SYMBOLS[0]?.id ?? 0;
+
+    drawChart(ctx, { ...chart([0, 0], 2), symbols: [knit, 0] }, view, size, theme);
+
+    expect(ctx.lines.some((line) => line.style === '#000000')).toBe(true);
+  });
+
+  it('leaves symbols out when they would be too small to read', () => {
+    const ctx = new Recorder();
+    const knit = SYMBOLS[0]?.id ?? 0;
+
+    drawChart(ctx, { ...chart([0, 0], 2), symbols: [knit, 0] }, { ...view, scale: 3 }, size, theme);
+
+    expect(ctx.lines.some((line) => line.style === '#000000')).toBe(false);
+  });
+
+  it('redraws when only the symbols changed', () => {
+    const before = chart([0, 0], 2);
+
+    expect(changedRegion(before, { ...before, symbols: [1, 0] })).toEqual({
+      fromX: 0,
+      toX: 0,
+      fromY: 0,
+      toY: 0,
+    });
+  });
+
+  it('uses the height of stitches that are not square', () => {
+    const ctx = new Recorder();
+
+    drawChart(ctx, chart([1, 1], 1), { ...view, aspect: 0.5 }, size, theme);
+
+    expect(colored(ctx)).toEqual([
+      { style: '#ff0000', x: 0, y: 0, w: 10, h: 5 },
+      { style: '#ff0000', x: 0, y: 5, w: 10, h: 5 },
+    ]);
   });
 
   it('skips a cell whose colour is missing instead of failing', () => {

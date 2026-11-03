@@ -1,5 +1,6 @@
 package dev.theocloud.stitchchart.pattern;
 
+import java.util.Arrays;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -79,6 +80,9 @@ class PatternService {
     }
     if (request.symbols() != null && request.symbols().length != cellCount) {
       throw invalid("symbols must have width * height entries");
+    }
+    if (request.symbols() != null && Arrays.stream(request.symbols()).anyMatch(id -> id < 0)) {
+      throw invalid("symbols must not be negative");
     }
     int colors = request.palette().size();
     for (int cell : request.cells()) {

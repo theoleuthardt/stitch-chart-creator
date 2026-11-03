@@ -29,6 +29,17 @@ describe('pdfLayout', () => {
     );
   });
 
+  it('uses the height of a knitted stitch', () => {
+    const layout = pdfLayout(createPattern(200, 300, 'knitting'), a4);
+
+    expect(layout.cellHeight).toBeCloseTo(layout.cellSize * 0.8);
+    for (const page of layout.pages) {
+      expect(layout.originY + (page.toY - page.fromY + 1) * layout.cellHeight).toBeLessThanOrEqual(
+        layout.pageHeight,
+      );
+    }
+  });
+
   it('splits a large chart over several pages', () => {
     expect(pdfLayout(createPattern(200, 300), a4).pages.length).toBeGreaterThan(1);
   });
@@ -40,7 +51,7 @@ describe('pdfLayout', () => {
       expect(layout.originX + (page.toX - page.fromX + 1) * layout.cellSize).toBeLessThanOrEqual(
         layout.pageWidth,
       );
-      expect(layout.originY + (page.toY - page.fromY + 1) * layout.cellSize).toBeLessThanOrEqual(
+      expect(layout.originY + (page.toY - page.fromY + 1) * layout.cellHeight).toBeLessThanOrEqual(
         layout.pageHeight,
       );
     }

@@ -3,7 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { PatternApi, PatternSummary } from '../../api/pattern-api';
-import { createPattern, Pattern } from '../../domain/pattern';
+import { CraftType, createPattern, Pattern } from '../../domain/pattern';
 import { parsePatternFile } from '../../export/pattern-file';
 
 /** A side of a chart is a positive whole number. */
@@ -22,6 +22,15 @@ const sizeValidators = [Validators.required, Validators.min(1), Validators.patte
           <label class="field" for="title">
             <span>Title</span>
             <input id="title" formControlName="title" />
+          </label>
+          <label class="field" for="craft">
+            <span>Craft</span>
+            <select id="craft" formControlName="craftType">
+              <option value="crossStitch">Cross stitch</option>
+              <option value="knitting">Knitting</option>
+              <option value="crochet">Crochet</option>
+              <option value="pixelArt">Pixel art</option>
+            </select>
           </label>
           <div class="size">
             <label class="field" for="width">
@@ -180,6 +189,7 @@ export class Library implements OnInit {
 
   readonly newChart = inject(NonNullableFormBuilder).group({
     title: ['Untitled', [Validators.required, Validators.maxLength(200)]],
+    craftType: ['crossStitch' as CraftType, Validators.required],
     width: [50, sizeValidators],
     height: [50, sizeValidators],
   });
@@ -211,9 +221,9 @@ export class Library implements OnInit {
     if (this.newChart.invalid) {
       return Promise.resolve();
     }
-    const { title, width, height } = this.newChart.getRawValue();
+    const { title, craftType, width, height } = this.newChart.getRawValue();
     return this.attempt(async () => {
-      const created = await this.api.create(createPattern(width, height, 'crossStitch', title));
+      const created = await this.api.create(createPattern(width, height, craftType, title));
       await this.router.navigateByUrl(`/charts/${created.id}`);
     });
   }

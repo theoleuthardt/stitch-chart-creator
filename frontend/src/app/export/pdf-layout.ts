@@ -1,4 +1,5 @@
 import { Pattern } from '../domain/pattern';
+import { cellAspect } from '../domain/symbols';
 import { CellRange } from '../domain/viewport';
 
 /** Paper sizes in points. */
@@ -21,6 +22,7 @@ export interface PdfLayout {
   originX: number;
   originY: number;
   cellSize: number;
+  cellHeight: number;
   overlap: number;
   pages: CellRange[];
 }
@@ -66,10 +68,12 @@ export function pdfLayout(pattern: Pattern, options: PdfOptions): PdfLayout {
   const usableWidth = pageWidth - originX - MARGIN;
   const usableHeight = pageHeight - originY - MARGIN;
 
-  const fit = Math.min(usableWidth / pattern.width, usableHeight / pattern.height);
+  const aspect = cellAspect(pattern.craftType);
+  const fit = Math.min(usableWidth / pattern.width, usableHeight / (pattern.height * aspect));
   const cellSize = fit >= BASE_CELL ? Math.min(fit, MAX_CELL) : BASE_CELL;
+  const cellHeight = cellSize * aspect;
   const columns = Math.floor(usableWidth / cellSize + 1e-9);
-  const rows = Math.floor(usableHeight / cellSize + 1e-9);
+  const rows = Math.floor(usableHeight / cellHeight + 1e-9);
 
   const pages: CellRange[] = [];
   for (const [fromY, toY] of stretches(pattern.height, rows)) {
@@ -77,5 +81,5 @@ export function pdfLayout(pattern: Pattern, options: PdfOptions): PdfLayout {
       pages.push({ fromX, toX, fromY, toY });
     }
   }
-  return { pageWidth, pageHeight, originX, originY, cellSize, overlap: OVERLAP, pages };
+  return { pageWidth, pageHeight, originX, originY, cellSize, cellHeight, overlap: OVERLAP, pages };
 }

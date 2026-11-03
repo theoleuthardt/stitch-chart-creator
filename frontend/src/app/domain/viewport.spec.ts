@@ -24,6 +24,33 @@ describe('cellAt', () => {
   });
 });
 
+describe('stitches that are not square', () => {
+  const flat: Viewport = { scale: 10, offsetX: 0, offsetY: 0, aspect: 0.5 };
+
+  it('finds the row by the height of a stitch', () => {
+    expect(cellAt(flat, 25, 12)).toEqual([2, 2]);
+  });
+
+  it('keeps the point under the pointer while zooming', () => {
+    const zoomed = zoomAt(flat, 2, 40, 40);
+
+    expect(zoomed.aspect).toBe(0.5);
+    expect(cellAt(zoomed, 40, 40)).toEqual(cellAt(flat, 40, 40));
+  });
+
+  it('counts the visible rows by their height', () => {
+    expect(visibleRange(flat, 100, 50, 100, 100).toY).toBe(9);
+  });
+
+  it('fits the chart by the height of its stitches', () => {
+    const fitted = fitToWindow(10, 10, 100, 100, 0, 0.5);
+
+    expect(fitted.scale).toBe(10);
+    expect(fitted.aspect).toBe(0.5);
+    expect(fitted.offsetY).toBe(25);
+  });
+});
+
 describe('zoomAt', () => {
   it('keeps the point under the pointer in place', () => {
     const zoomed = zoomAt(view, 2, 110, 80);

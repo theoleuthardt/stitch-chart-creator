@@ -1,5 +1,6 @@
 import type { Cell, Sheet } from 'write-excel-file/browser';
 import { Pattern } from '../domain/pattern';
+import { cellAspect, symbolById, usedSymbols } from '../domain/symbols';
 import { usedColors } from './image-layout';
 
 /** The columns of a worksheet. */
@@ -19,15 +20,25 @@ export function fitsExcel(pattern: Pattern): boolean {
   return pattern.width <= MAX_COLUMNS && pattern.height <= MAX_ROWS;
 }
 
-/** The worksheets of a chart: one coloured cell per stitch, then the legend. */
+/** The worksheets of a chart: one cell per stitch with colour and symbol, then the legend. */
 export function excelSheets(pattern: Pattern): Sheet<Blob>[] {
+  const height = CELL_HEIGHT * cellAspect(pattern.craftType);
   const chart: (Cell | null)[][] = [];
   for (let y = 0; y < pattern.height; y++) {
     const row: (Cell | null)[] = [];
     for (let x = 0; x < pattern.width; x++) {
-      const value = pattern.cells[y * pattern.width + x] ?? 0;
-      const color = value > 0 ? pattern.palette[value - 1] : undefined;
-      row.push(color ? { value: '', backgroundColor: color, height: CELL_HEIGHT } : null);
+      const index = y * pattern.width + x;
+      const color = pattern.palette[(pattern.cells[index] ?? 0) - 1];
+      const symbol = symbolById(pattern.symbols?.[index] ?? 0);
+      row.push(
+        color || symbol
+          ? {
+              value: symbol?.abbreviation ?? '',
+              height,
+              ...(color ? { backgroundColor: color } : {}),
+            }
+          : null,
+      );
     }
     chart.push(row);
   }
@@ -41,6 +52,11 @@ export function excelSheets(pattern: Pattern): Sheet<Blob>[] {
       { value: '', backgroundColor: entry.color },
       { value: entry.color },
       { value: entry.count },
+    ]),
+    ...usedSymbols(pattern).map(({ symbol, count }) => [
+      { value: symbol.name },
+      { value: symbol.abbreviation },
+      { value: count },
     ]),
   ];
   return [

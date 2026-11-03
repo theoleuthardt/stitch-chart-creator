@@ -30,6 +30,14 @@ describe('renderPdf', () => {
     expect(await pageCount(blob)).toBe(2);
   });
 
+  it('handles a chart with symbols', async () => {
+    const knitted = { ...createPattern(4, 1, 'knitting'), symbols: [1, 3, 0, 2] };
+
+    const blob = await renderPdf(knitted, { paper: 'a4', landscape: false });
+
+    expect(await pageCount(blob)).toBe(2);
+  });
+
   it('writes as many pages as the layout asks for', async () => {
     const blob = await renderPdf(pattern, { paper: 'a4', landscape: true });
 

@@ -26,6 +26,7 @@ class Recorder {
   beginPath = () => undefined;
   moveTo = () => undefined;
   lineTo = () => undefined;
+  arc = () => undefined;
 }
 
 const pattern: Pattern = { ...createPattern(20, 20), palette: ['#ff0000'], cells: [] };
@@ -39,7 +40,26 @@ const draw = (changes: Partial<ExportOptions>) => {
   return ctx;
 };
 
+const knitted: Pattern = {
+  ...createPattern(2, 1, 'knitting'),
+  cells: [0, 0],
+  symbols: [1, 2],
+};
+
 describe('drawExport', () => {
+  it('draws the symbols and names them in the legend', () => {
+    const ctx = new Recorder();
+
+    drawExport(ctx as unknown as ChartCanvasContext, knitted, {
+      ...options,
+      cellSize: 20,
+      legend: true,
+    });
+
+    expect(ctx.strokes).toBeGreaterThan(0);
+    expect(ctx.texts).toEqual(['k   Knit   1 stitches', 'p   Purl   1 stitches']);
+  });
+
   it('draws the chart on white paper', () => {
     const ctx = draw({});
 

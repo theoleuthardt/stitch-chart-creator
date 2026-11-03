@@ -72,6 +72,32 @@ describe('renderSvg', () => {
     expect(document.documentElement.textContent).toContain('3 stitches');
   });
 
+  it('draws symbols as lines and circles', () => {
+    const knitted = { ...createPattern(2, 1, 'knitting'), symbols: [1, 3] };
+
+    const document = parse(renderSvg(knitted, options));
+
+    expect(document.querySelectorAll('g.symbols line')).toHaveLength(1);
+    expect(document.querySelectorAll('g.symbols circle')).toHaveLength(1);
+  });
+
+  it('uses the height of a knitted stitch', () => {
+    const knitted = { ...createPattern(2, 2, 'knitting'), cells: [1, 1, 1, 1] };
+
+    const document = parse(renderSvg(knitted, options));
+
+    expect(document.documentElement.getAttribute('height')).toBe('16');
+    expect(document.querySelector('g.cells rect')?.getAttribute('height')).toBe('8');
+  });
+
+  it('lists the symbols in the legend', () => {
+    const knitted = { ...createPattern(1, 1, 'knitting'), symbols: [1] };
+
+    const document = parse(renderSvg(knitted, { ...options, legend: true }));
+
+    expect(document.documentElement.textContent).toContain('k   Knit   1 stitches');
+  });
+
   it('never adds branding', () => {
     const svg = renderSvg(pattern, { ...options, gridLines: true, numbers: true, legend: true });
 

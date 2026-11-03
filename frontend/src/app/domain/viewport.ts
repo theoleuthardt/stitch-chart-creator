@@ -1,8 +1,17 @@
-/** How the chart lies in the window: pixels per cell and the position of its top left corner. */
+/**
+ * How the chart lies in the window: pixels per cell and the position of its top left corner. `scale`
+ * is the width of a cell; a cell is `aspect` times as high as it is wide, 1 when left out.
+ */
 export interface Viewport {
   scale: number;
   offsetX: number;
   offsetY: number;
+  aspect?: number;
+}
+
+/** The height of a cell in pixels. */
+export function cellHeight(viewport: Viewport): number {
+  return viewport.scale * (viewport.aspect ?? 1);
 }
 
 /** A range of cells, both ends included. */
@@ -25,7 +34,7 @@ const MAX_FIT_SCALE = 48;
 export function cellAt(viewport: Viewport, x: number, y: number): [number, number] {
   return [
     Math.floor((x - viewport.offsetX) / viewport.scale),
-    Math.floor((y - viewport.offsetY) / viewport.scale),
+    Math.floor((y - viewport.offsetY) / cellHeight(viewport)),
   ];
 }
 
@@ -34,6 +43,7 @@ export function zoomAt(viewport: Viewport, factor: number, x: number, y: number)
   const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, viewport.scale * factor));
   const applied = scale / viewport.scale;
   return {
+    ...viewport,
     scale,
     offsetX: x - (x - viewport.offsetX) * applied,
     offsetY: y - (y - viewport.offsetY) * applied,
@@ -68,19 +78,21 @@ export function fitToWindow(
   windowWidth: number,
   windowHeight: number,
   margin: number,
+  aspect = 1,
 ): Viewport {
   const scale = Math.max(
     MIN_SCALE,
     Math.min(
       MAX_FIT_SCALE,
       (windowWidth - margin * 2) / chartWidth,
-      (windowHeight - margin * 2) / chartHeight,
+      (windowHeight - margin * 2) / (chartHeight * aspect),
     ),
   );
   return {
     scale,
+    aspect,
     offsetX: (windowWidth - chartWidth * scale) / 2,
-    offsetY: (windowHeight - chartHeight * scale) / 2,
+    offsetY: (windowHeight - chartHeight * scale * aspect) / 2,
   };
 }
 
