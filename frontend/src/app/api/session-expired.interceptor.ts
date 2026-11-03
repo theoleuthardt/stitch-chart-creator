@@ -5,8 +5,8 @@ import { catchError, throwError } from 'rxjs';
 import { SessionService } from './session.service';
 
 /**
- * A 401 on a normal route means that the session ended, so the user goes back to sign-in. The auth
- * routes are left out: there a 401 is a wrong password or simply nobody signed in yet.
+ * A 401 on a normal route of a signed-in user means that the session ended, so the user goes back
+ * to sign-in. The auth routes are left out: there a 401 is a wrong password or nobody signed in.
  */
 export const sessionExpiredInterceptor: HttpInterceptorFn = (request, next) => {
   const session = inject(SessionService);
@@ -16,7 +16,8 @@ export const sessionExpiredInterceptor: HttpInterceptorFn = (request, next) => {
       if (
         error instanceof HttpErrorResponse &&
         error.status === 401 &&
-        !request.url.startsWith('/api/auth/')
+        !request.url.startsWith('/api/auth/') &&
+        session.signedIn()
       ) {
         session.setUser(null);
         void router.navigateByUrl('/sign-in');

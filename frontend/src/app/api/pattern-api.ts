@@ -100,6 +100,25 @@ export class PatternApi {
     await firstValueFrom(this.http.put(`${path(id)}/progress`, progress));
   }
 
+  shareStatus(id: string): Promise<{ slug: string | null }> {
+    return firstValueFrom(this.http.get<{ slug: string | null }>(`${path(id)}/share`));
+  }
+
+  share(id: string): Promise<{ slug: string }> {
+    return firstValueFrom(this.http.post<{ slug: string }>(`${path(id)}/share`, null));
+  }
+
+  async revokeShare(id: string): Promise<void> {
+    await firstValueFrom(this.http.delete(`${path(id)}/share`));
+  }
+
+  /** Loads a shared chart. This works without an account and strips the fields a copy adds. */
+  async readShared(slug: string): Promise<Pattern> {
+    return fromServer(
+      await firstValueFrom(this.http.get<StoredPattern>(`/api/share/${encodeURIComponent(slug)}`)),
+    );
+  }
+
   async remove(id: string): Promise<void> {
     await firstValueFrom(this.http.delete(path(id)));
   }

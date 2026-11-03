@@ -74,6 +74,24 @@ class PatternController {
     return new PatternResponses.Progress(body.doneRows(), body.doneCells(), body.currentRow());
   }
 
+  @GetMapping("/{id}/share")
+  PatternResponses.ShareStatus shareStatus(
+      @AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
+    return patternService.shareStatus(principal.id(), id);
+  }
+
+  @PostMapping("/{id}/share")
+  PatternResponses.ShareStatus share(
+      @AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
+    return patternService.share(principal.id(), id);
+  }
+
+  @DeleteMapping("/{id}/share")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void revokeShare(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
+    patternService.revokeShare(principal.id(), id);
+  }
+
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void delete(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {

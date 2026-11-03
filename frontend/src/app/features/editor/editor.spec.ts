@@ -15,7 +15,11 @@ class FakeResizeObserver {
 describe('Editor', () => {
   const setup = async (get: ReturnType<typeof vi.fn>) => {
     vi.stubGlobal('ResizeObserver', FakeResizeObserver);
-    const api = { get, save: vi.fn(() => Promise.resolve({ version: 2 })) };
+    const api = {
+      get,
+      save: vi.fn(() => Promise.resolve({ version: 2 })),
+      shareStatus: vi.fn(() => Promise.resolve({ slug: null })),
+    };
     TestBed.configureTestingModule({
       imports: [Editor],
       providers: [

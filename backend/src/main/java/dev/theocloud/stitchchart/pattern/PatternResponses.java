@@ -55,6 +55,32 @@ final class PatternResponses {
       String thumbnail,
       Instant updatedAt) {}
 
+  /** What a shared chart shows: the chart itself and nothing about its owner or its history. */
+  record Shared(
+      String title,
+      String craftType,
+      int width,
+      int height,
+      String[] palette,
+      int[] cells,
+      int[] symbols,
+      List<EmbeddedStitch> customStitches) {
+
+    static Shared of(ChartPattern pattern) {
+      return new Shared(
+          pattern.getTitle(),
+          pattern.getCraftType(),
+          pattern.getWidth(),
+          pattern.getHeight(),
+          pattern.getPalette(),
+          pattern.getCells(),
+          pattern.getSymbols(),
+          pattern.getCustomStitches());
+    }
+  }
+
+  record ShareStatus(String slug) {}
+
   record Progress(int[] doneRows, int[] doneCells, int currentRow) {
 
     static final Progress NONE = new Progress(new int[0], new int[0], 0);

@@ -147,6 +147,34 @@ describe('PatternApi', () => {
     await saved;
   });
 
+  it('asks for the link of a chart', async () => {
+    const status = api.shareStatus('a');
+    http.expectOne('/api/patterns/a/share').flush({ slug: null });
+
+    expect(await status).toEqual({ slug: null });
+  });
+
+  it('creates and revokes a link', async () => {
+    const created = api.share('a');
+    const create = http.expectOne('/api/patterns/a/share');
+    expect(create.request.method).toBe('POST');
+    create.flush({ slug: 'abc' });
+    expect((await created).slug).toBe('abc');
+
+    const revoked = api.revokeShare('a');
+    const revoke = http.expectOne('/api/patterns/a/share');
+    expect(revoke.request.method).toBe('DELETE');
+    revoke.flush(null, { status: 204, statusText: 'No Content' });
+    await revoked;
+  });
+
+  it('reads a shared chart and keeps the slug in its path segment', async () => {
+    const read = api.readShared('a/b');
+    http.expectOne('/api/share/a%2Fb').flush({ title: 'Rose', symbols: null, customStitches: [] });
+
+    expect(await read).toEqual({ title: 'Rose' });
+  });
+
   it('deletes a pattern', async () => {
     const deleted = api.remove('a');
     const request = http.expectOne('/api/patterns/a');

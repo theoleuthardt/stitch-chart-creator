@@ -19,10 +19,13 @@ class PatternService {
 
   private final PatternRepository patterns;
   private final ProgressRepository progress;
+  private final ShareLinkRepository shareLinks;
 
-  PatternService(PatternRepository patterns, ProgressRepository progress) {
+  PatternService(
+      PatternRepository patterns, ProgressRepository progress, ShareLinkRepository shareLinks) {
     this.patterns = patterns;
     this.progress = progress;
+    this.shareLinks = shareLinks;
   }
 
   @Transactional(readOnly = true)
@@ -74,6 +77,37 @@ class PatternService {
   private ChartPattern find(UUID ownerId, UUID id) {
     return patterns
         .findByIdAndOwnerId(id, ownerId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+  }
+
+  /** The link of a chart, or none. */
+  @Transactional(readOnly = true)
+  PatternResponses.ShareStatus shareStatus(UUID ownerId, UUID id) {
+    find(ownerId, id);
+    return new PatternResponses.ShareStatus(
+        shareLinks.findById(id).map(ShareLink::getSlug).orElse(null));
+  }
+
+  /** Creates the link of a chart. A chart keeps one link, however often it is shared. */
+  @Transactional
+  PatternResponses.ShareStatus share(UUID ownerId, UUID id) {
+    find(ownerId, id);
+    ShareLink link = shareLinks.findById(id).orElseGet(() -> shareLinks.save(new ShareLink(id)));
+    return new PatternResponses.ShareStatus(link.getSlug());
+  }
+
+  @Transactional
+  void revokeShare(UUID ownerId, UUID id) {
+    find(ownerId, id);
+    shareLinks.deleteById(id);
+  }
+
+  @Transactional(readOnly = true)
+  PatternResponses.Shared readShared(String slug) {
+    return shareLinks
+        .findBySlug(slug)
+        .flatMap(link -> patterns.findById(link.getPatternId()))
+        .map(PatternResponses.Shared::of)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 

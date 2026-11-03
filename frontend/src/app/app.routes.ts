@@ -6,6 +6,7 @@ import { SignIn } from './features/auth/sign-in';
 import { Editor } from './features/editor/editor';
 import { ImageImport } from './features/import/image-import';
 import { Library } from './features/library/library';
+import { SharedChart } from './features/share/shared-chart';
 import { Work } from './features/work/work';
 
 /** All screens of the app. */
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'charts/:id/work', component: Work, canActivate: [authGuard], title: 'Work mode' },
   { path: 'import', component: ImageImport, canActivate: [authGuard], title: 'Import an image' },
   { path: 'account', component: AccountSettings, canActivate: [authGuard], title: 'Account' },
+  { path: 'share/:slug', component: SharedChart, title: 'Shared chart' },
   { path: 'sign-in', component: SignIn, canActivate: [guestGuard], title: 'Sign in' },
   { path: 'register', component: Register, canActivate: [guestGuard], title: 'Create account' },
   { path: '**', redirectTo: '' },

@@ -29,6 +29,7 @@ import { EditorStore, Tool } from './editor-store';
 import { ExportPanel } from './export-panel';
 import { GaugePanel } from './gauge-panel';
 import { PalettePanel } from './palette-panel';
+import { SharePanel } from './share-panel';
 import { shortcutFor } from './shortcuts';
 import { SymbolPanel } from './symbol-panel';
 
@@ -52,6 +53,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
     ExportPanel,
     GaugePanel,
     PalettePanel,
+    SharePanel,
     SymbolPanel,
   ],
   providers: [EditorStore],
@@ -134,6 +136,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
             <scc-gauge-panel />
             <scc-check-panel (jump)="canvas().focus($event)" />
             <scc-export-panel />
+            <scc-share-panel [chartId]="id" />
           </aside>
         </div>
       </div>
