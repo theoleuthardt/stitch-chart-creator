@@ -9,14 +9,7 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { PatternApi, StoredPattern } from '../../api/pattern-api';
-import {
-  finishRow,
-  moveRow,
-  percentDone,
-  Progress,
-  toggleCell,
-  toggleRow,
-} from '../../domain/progress';
+import { finishRow, markAt, moveRow, percentDone, Progress } from '../../domain/progress';
 import { ChartCanvas } from '../editor/chart-canvas';
 
 /** The pause after a change before the progress is saved, in milliseconds. */
@@ -173,12 +166,9 @@ export class Work {
   /** A tap on the chart marks its row or its stitch, depending on the mode. */
   tap([x, y]: readonly [number, number]): void {
     const chart = this.chart();
-    if (!chart || x < 0 || y < 0 || x >= chart.width || y >= chart.height) {
-      return;
+    if (chart) {
+      this.change((progress) => markAt(chart, progress, this.mode(), x, y));
     }
-    this.change((progress) =>
-      this.mode() === 'row' ? toggleRow(progress, y) : toggleCell(progress, y * chart.width + x),
-    );
   }
 
   move(delta: number): void {
@@ -192,8 +182,11 @@ export class Work {
   private change(update: (progress: Progress) => Progress): void {
     const progress = this.progress();
     if (progress) {
-      this.progress.set(update(progress));
-      this.schedule();
+      const next = update(progress);
+      if (next !== progress) {
+        this.progress.set(next);
+        this.schedule();
+      }
     }
   }
 

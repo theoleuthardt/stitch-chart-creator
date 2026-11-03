@@ -239,6 +239,26 @@ class PatternApiTests {
   }
 
   @Test
+  void savingWithoutAGaugeRemovesIt() throws Exception {
+    Cookie session = signUp(mockMvc, uniqueName());
+    String body =
+        VALID.replace(
+            "\"cells\":[0,1,2,0]",
+            "\"cells\":[0,1,2,0],\"gauge\":{\"stitchesPerUnit\":22,\"rowsPerUnit\":30,"
+                + "\"unit\":\"cm\"}");
+    JsonNode pattern =
+        objectMapper.readTree(create(session, body).andReturn().getResponse().getContentAsString());
+    String id = pattern.get("id").asString();
+
+    send(put("/api/patterns/" + id), session, withVersion(VALID, pattern.get("version").asLong()))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/patterns/" + id).cookie(session))
+        .andExpect(jsonPath("$.gauge").value(org.hamcrest.Matchers.nullValue()));
+  }
+
+  @Test
   void aChartWithoutGaugeSettingsHasNone() throws Exception {
     Cookie session = signUp(mockMvc, uniqueName());
     String id = created(session).get("id").asString();

@@ -35,12 +35,20 @@ import {
   zoomAt,
 } from '../../domain/viewport';
 
+/** A finger that moves further than this in pixels drags instead of tapping. */
+const TAP_TOLERANCE = 8;
+
+function movedAway(from: Point, to: Point): boolean {
+  return Math.hypot(to[0] - from[0], to[1] - from[1]) > TAP_TOLERANCE;
+}
+
 /** How much one wheel step zooms. */
 const WHEEL_ZOOM = 1.0015;
 
 /**
  * The chart on one canvas. It owns the view (zoom and pan) and reports strokes as cells. A finger
  * draws, two fingers move the view; with a mouse the middle button or the space key moves it.
+ * Read-only there is nothing to draw: dragging moves the view and a short tap reports its cell.
  */
 @Component({
   selector: 'scc-chart-canvas',
@@ -82,6 +90,8 @@ const WHEEL_ZOOM = 1.0015;
 export class ChartCanvas {
   readonly pattern = input.required<Pattern>();
   readonly progress = input<Progress | null>(null);
+  readonly readOnly = input(false);
+  readonly tapped = output<[number, number]>();
   readonly strokeStart = output<[number, number]>();
   readonly strokeMove = output<[number, number]>();
   readonly strokeEnd = output();
@@ -103,6 +113,7 @@ export class ChartCanvas {
   private readonly pointers = new Map<number, Point>();
   private marked: CellRange | null = null;
   private stroking = false;
+  private tapStart: Point | null = null;
   private panning = false;
 
   constructor() {
@@ -160,10 +171,17 @@ export class ChartCanvas {
     this.canvas().nativeElement.setPointerCapture(event.pointerId);
     this.pointers.set(event.pointerId, [event.offsetX, event.offsetY]);
     if (this.pointers.size >= 2) {
+      this.tapStart = null;
+      this.panning = false;
       if (this.stroking) {
         this.stroking = false;
         this.strokeCancel.emit();
       }
+      return;
+    }
+    if (this.readOnly()) {
+      this.panning = true;
+      this.tapStart = [event.offsetX, event.offsetY];
       return;
     }
     if (event.button === 1 || event.button === 2 || this.spaceHeld()) {
@@ -188,6 +206,9 @@ export class ChartCanvas {
       this.viewport.update((view) =>
         panBy(view, position[0] - previous[0], position[1] - previous[1]),
       );
+      if (this.tapStart && movedAway(this.tapStart, position)) {
+        this.tapStart = null;
+      }
     } else if (this.stroking) {
       this.strokeMove.emit(cellAt(this.viewport(), position[0], position[1]));
     }
@@ -196,6 +217,10 @@ export class ChartCanvas {
   pointerUp(event: PointerEvent): void {
     this.pointers.delete(event.pointerId);
     this.panning = false;
+    if (this.tapStart) {
+      this.tapped.emit(cellAt(this.viewport(), this.tapStart[0], this.tapStart[1]));
+      this.tapStart = null;
+    }
     if (this.stroking) {
       this.stroking = false;
       this.strokeEnd.emit();
@@ -206,6 +231,7 @@ export class ChartCanvas {
   pointerCancel(event: PointerEvent): void {
     this.pointers.delete(event.pointerId);
     this.panning = false;
+    this.tapStart = null;
     if (this.stroking) {
       this.stroking = false;
       this.strokeCancel.emit();

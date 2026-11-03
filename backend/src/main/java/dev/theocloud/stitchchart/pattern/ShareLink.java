@@ -28,11 +28,10 @@ class ShareLink {
 
   protected ShareLink() {}
 
-  ShareLink(UUID patternId) {
-    this.patternId = patternId;
+  static String newSlug() {
     byte[] bytes = new byte[16];
     RANDOM.nextBytes(bytes);
-    this.slug = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
   }
 
   UUID getPatternId() {

@@ -95,8 +95,13 @@ export class SharePanel implements OnInit {
   }
 
   async copy(link: string): Promise<void> {
-    await navigator.clipboard.writeText(link);
-    this.copied.set(true);
+    this.error.set(null);
+    try {
+      await navigator.clipboard.writeText(link);
+      this.copied.set(true);
+    } catch {
+      this.error.set('The link could not be copied. Please select it and copy it by hand.');
+    }
   }
 
   private async attempt(action: () => Promise<void>): Promise<void> {

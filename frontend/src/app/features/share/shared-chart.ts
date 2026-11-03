@@ -27,7 +27,7 @@ import { ChartCanvas } from '../editor/chart-canvas';
         @if (notice(); as message) {
           <p class="error" role="alert">{{ message }}</p>
         }
-        <scc-chart-canvas [pattern]="pattern" />
+        <scc-chart-canvas [pattern]="pattern" [readOnly]="true" />
       </div>
     } @else if (error(); as message) {
       <section class="panel narrow">

@@ -118,6 +118,8 @@ class ProgressApiTests {
       PROGRESS.replace("\"currentRow\":1", "\"currentRow\":3"),
       PROGRESS.replace("\"currentRow\":1", "\"currentRow\":-1"),
       "{\"doneRows\":null,\"doneCells\":[],\"currentRow\":0}",
+      "{\"doneRows\":[0,0,0,0],\"doneCells\":[],\"currentRow\":0}",
+      "{\"doneRows\":[],\"doneCells\":[0,0,0,0,0,0,0],\"currentRow\":0}",
     };
 
     for (String body : invalid) {
@@ -148,6 +150,40 @@ class ProgressApiTests {
             """
             {"title":"Rose","craftType":"crossStitch","width":2,"height":1,
              "palette":["#ff0000"],"cells":[1,1],"version":%d}\
+            """
+                .formatted(version))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get(progress(id)).cookie(session))
+        .andExpect(jsonPath("$.doneRows", hasSize(0)))
+        .andExpect(jsonPath("$.doneCells", hasSize(0)))
+        .andExpect(jsonPath("$.currentRow").value(0));
+  }
+
+  @Test
+  void aChangedWidthStartsTheProgressOver() throws Exception {
+    Cookie session = signUp(mockMvc, uniqueName());
+    String id = chart(session);
+    send(put(progress(id)), session, "{\"doneRows\":[0],\"doneCells\":[1],\"currentRow\":1}")
+        .andExpect(status().isOk());
+    long version =
+        objectMapper
+            .readTree(
+                mockMvc
+                    .perform(get("/api/patterns/" + id).cookie(session))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString())
+            .get("version")
+            .asLong();
+
+    send(
+            put("/api/patterns/" + id),
+            session,
+            """
+            {"title":"Rose","craftType":"crossStitch","width":3,"height":2,
+             "palette":["#ff0000"],"cells":[1,1,1,1,1,1],"version":%d}\
             """
                 .formatted(version))
         .andExpect(status().isOk());

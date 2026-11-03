@@ -1,4 +1,4 @@
-import { Pattern } from './pattern';
+import { cellIndex, inBounds, Pattern } from './pattern';
 
 /** How far a chart has been stitched. Rows count from 0, cells are indices of the flat array. */
 export interface Progress {
@@ -19,6 +19,20 @@ export function toggleRow(progress: Progress, row: number): Progress {
 
 export function toggleCell(progress: Progress, index: number): Progress {
   return { ...progress, doneCells: toggled(progress.doneCells, index) };
+}
+
+/** Marks what a tap on a cell stands for. A tap beside the chart changes nothing. */
+export function markAt(
+  pattern: Pattern,
+  progress: Progress,
+  mode: 'row' | 'stitch',
+  x: number,
+  y: number,
+): Progress {
+  if (!inBounds(pattern, x, y)) {
+    return progress;
+  }
+  return mode === 'row' ? toggleRow(progress, y) : toggleCell(progress, cellIndex(pattern, x, y));
 }
 
 export function isCellDone(pattern: Pattern, progress: Progress, x: number, y: number): boolean {

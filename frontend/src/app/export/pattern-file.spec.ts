@@ -186,6 +186,18 @@ describe('parsePatternFile', () => {
     expect(result.ok && result.pattern.gauge).toEqual(gauge);
   });
 
+  it('takes only the known fields of a gauge', () => {
+    const gauge = { stitchesPerUnit: 22, rowsPerUnit: 30, unit: 'cm', extra: 'x'.repeat(100) };
+
+    const result = parsePatternFile(file({ gauge }));
+
+    expect(result.ok && result.pattern.gauge).toEqual({
+      stitchesPerUnit: 22,
+      rowsPerUnit: 30,
+      unit: 'cm',
+    });
+  });
+
   it('rejects an impossible gauge', () => {
     expect(rejected(file({ gauge: 'tight' }))).toContain('gauge');
     expect(rejected(file({ gauge: { stitchesPerUnit: 0, rowsPerUnit: 1, unit: 'cm' } }))).toContain(

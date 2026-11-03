@@ -49,6 +49,29 @@ describe('SharePanel', () => {
     expect(panel.url()).toBeNull();
   });
 
+  it('copies the link and says so', async () => {
+    const { panel } = await setup('xyz');
+    vi.stubGlobal('navigator', { clipboard: { writeText: () => Promise.resolve() } });
+
+    await panel.copy('link');
+
+    expect(panel.copied()).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('shows when the browser refuses to copy', async () => {
+    const { panel } = await setup('xyz');
+    vi.stubGlobal('navigator', {
+      clipboard: { writeText: () => Promise.reject(new Error('denied')) },
+    });
+
+    await panel.copy('link');
+
+    expect(panel.copied()).toBe(false);
+    expect(panel.error()).toContain('could not be copied');
+    vi.unstubAllGlobals();
+  });
+
   it('shows why something failed', async () => {
     const { panel, api } = await setup(null);
     api.share.mockRejectedValueOnce(new Error('nope'));

@@ -77,6 +77,57 @@ describe('ChartCanvas gestures', () => {
     expect(canvas.viewport()).toMatchObject({ offsetX: 20, offsetY: 30 });
   });
 
+  describe('when read-only', () => {
+    let taps: number[][];
+
+    beforeEach(() => {
+      ref.setInput('readOnly', true);
+      taps = [];
+      canvas.tapped.subscribe((cell) => taps.push([...cell]));
+    });
+
+    it('reports a tap as a cell and no stroke', () => {
+      canvas.pointerDown(pointer(1, 15, 25));
+      canvas.pointerUp(pointer(1, 15, 25));
+
+      expect(taps).toEqual([[1, 2]]);
+      expect(events).toEqual([]);
+    });
+
+    it('moves the view with a finger and reports no tap', () => {
+      canvas.pointerDown(pointer(1, 10, 10));
+      canvas.pointerMove(pointer(1, 40, 10));
+      canvas.pointerUp(pointer(1, 40, 10));
+
+      expect(taps).toEqual([]);
+      expect(canvas.viewport().offsetX).toBe(30);
+    });
+
+    it('accepts a tap with a slightly shaking finger', () => {
+      canvas.pointerDown(pointer(1, 15, 25));
+      canvas.pointerMove(pointer(1, 17, 26));
+      canvas.pointerUp(pointer(1, 17, 26));
+
+      expect(taps).toHaveLength(1);
+    });
+
+    it('reports no tap after zooming with two fingers', () => {
+      canvas.pointerDown(pointer(1, 100, 100));
+      canvas.pointerDown(pointer(2, 200, 100));
+      canvas.pointerUp(pointer(1, 100, 100));
+      canvas.pointerUp(pointer(2, 200, 100));
+
+      expect(taps).toEqual([]);
+    });
+
+    it('reports no tap when the system aborts the gesture', () => {
+      canvas.pointerDown(pointer(1, 15, 25));
+      canvas.pointerCancel(pointer(1));
+
+      expect(taps).toEqual([]);
+    });
+  });
+
   it('zooms with two fingers', () => {
     canvas.pointerDown(pointer(1, 100, 100));
     canvas.pointerDown(pointer(2, 200, 100));

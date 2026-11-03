@@ -190,7 +190,15 @@ export function parsePatternFile(text: string): ParseResult {
       cells: cells as number[],
       ...(symbols ? { symbols: symbols as number[] } : {}),
       ...(customStitches ? { customStitches } : {}),
-      ...(gauge ? { gauge } : {}),
+      ...(gauge
+        ? {
+            gauge: {
+              stitchesPerUnit: gauge.stitchesPerUnit,
+              rowsPerUnit: gauge.rowsPerUnit,
+              unit: gauge.unit,
+            },
+          }
+        : {}),
     },
   };
 }

@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { finishedSize, Gauge, GaugeUnit, requiredStitches, sizeOnFabric } from '../../domain/gauge';
 import { EditorStore } from './editor-store';
 
+/** The largest gauge the backend accepts. */
+const MAX_GAUGE = 1000;
+
 /** Common Aida counts. */
 const FABRIC_COUNTS = [11, 14, 16, 18, 22];
 
@@ -176,9 +179,13 @@ export class GaugePanel {
     const { width, height } = this.store.pattern();
     return sizeOnFabric(width, height, this.fabricCount(), this.margin());
   });
-  readonly required = computed(() =>
-    requiredStitches(this.wantedWidth(), this.wantedHeight(), this.wantedUnit(), this.gauge()),
-  );
+  readonly required = computed(() => {
+    const width = this.wantedWidth();
+    const height = this.wantedHeight();
+    return Number.isFinite(width) && Number.isFinite(height)
+      ? requiredStitches(width, height, this.wantedUnit(), this.gauge())
+      : null;
+  });
 
   setMargin(margin: number): void {
     if (Number.isFinite(margin) && margin >= 0) {
@@ -189,7 +196,8 @@ export class GaugePanel {
   /** Stores a changed gauge with the chart. An impossible value is not taken over. */
   update(change: Partial<Gauge>): void {
     const gauge = { ...this.gauge(), ...change };
-    if (gauge.stitchesPerUnit > 0 && gauge.rowsPerUnit > 0) {
+    const valid = (value: number) => value > 0 && value <= MAX_GAUGE;
+    if (valid(gauge.stitchesPerUnit) && valid(gauge.rowsPerUnit)) {
       this.store.apply({ ...this.store.pattern(), gauge });
     }
   }

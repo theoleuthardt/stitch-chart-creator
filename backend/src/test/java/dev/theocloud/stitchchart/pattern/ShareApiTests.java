@@ -13,9 +13,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import dev.theocloud.stitchchart.IntegrationTest;
 import jakarta.servlet.http.Cookie;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
@@ -122,6 +131,30 @@ class ShareApiTests {
     String id = chart(session);
 
     assertThat(slug(session, id)).isEqualTo(slug(session, id));
+  }
+
+  @Test
+  void sharingAtTheSameTimeGivesOneLink() throws Exception {
+    Cookie session = signUp(mockMvc, uniqueName());
+    String id = chart(session);
+
+    Set<String> slugs = ConcurrentHashMap.newKeySet();
+    try (ExecutorService pool = Executors.newFixedThreadPool(6)) {
+      List<Callable<Integer>> requests =
+          Collections.nCopies(
+              6,
+              () -> {
+                MockHttpServletResponse response = share(session, id).andReturn().getResponse();
+                slugs.add(
+                    objectMapper.readTree(response.getContentAsString()).get("slug").asString());
+                return response.getStatus();
+              });
+      for (Future<Integer> request : pool.invokeAll(requests)) {
+        assertThat(request.get()).isEqualTo(200);
+      }
+    }
+
+    assertThat(slugs).hasSize(1);
   }
 
   @Test

@@ -13,7 +13,9 @@ The images are public:
 
 ## First start
 
-On the host, in an LXC with Podman or Docker, in an empty folder:
+On the host, in an LXC with Podman, in an empty folder. `compose.yml` is written for rootless
+Podman: the `:U` of the database volume hands it to the user inside the container, and Docker does
+not know this option, so remove it there.
 
 ```bash
 curl -O https://raw.githubusercontent.com/theoleuthardt/stitch-chart-creator/main/compose.yml
@@ -33,13 +35,16 @@ is `GET /api/health`.
 | Setting             | Meaning                                                                  |
 | ------------------- | ------------------------------------------------------------------------ |
 | `POSTGRES_PASSWORD` | Password of the database. Required.                                      |
+| `BIND`              | Address of the host the port is opened on. Default `0.0.0.0`.            |
 | `PORT`              | Port of the web server on the host. Default `8080`.                      |
 | `TAG`               | Image tag. Default `latest`; a version tag makes updates deliberate.     |
 | `COOKIE_SECURE`     | Keep `true` behind HTTPS. Only `false` for a test over plain HTTP.       |
 
 ## Behind a reverse proxy
 
-Point the proxy at `PORT` and let it terminate HTTPS. It has to pass `X-Forwarded-Proto` and
+Point the proxy at `PORT` and let it terminate HTTPS. The app itself only speaks plain HTTP: set
+`BIND=127.0.0.1` when the proxy runs on the same host, or to the address of the internal network
+when it runs elsewhere, so that nobody can reach it around the proxy. It has to pass `X-Forwarded-Proto` and
 `X-Forwarded-For`. The session cookie is `Secure`, so signing in needs HTTPS; over plain HTTP the
 browser drops the cookie.
 

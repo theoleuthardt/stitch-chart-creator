@@ -55,8 +55,18 @@ describe('GaugePanel', () => {
 
     panel.update({ rowsPerUnit: 0 });
     panel.update({ stitchesPerUnit: Number.NaN });
+    panel.update({ stitchesPerUnit: 2000 });
+    panel.update({ rowsPerUnit: Number.POSITIVE_INFINITY });
 
     expect(store.pattern().gauge).toBeUndefined();
+  });
+
+  it('shows nothing for an empty wanted size', async () => {
+    const { panel } = await setup('knitting');
+
+    panel.wantedWidth.set(Number.NaN);
+
+    expect(panel.required()).toBeNull();
   });
 
   it('works out the stitches for a wanted size', async () => {

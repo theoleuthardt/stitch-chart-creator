@@ -3,6 +3,7 @@ import {
   EMPTY_PROGRESS,
   finishRow,
   isCellDone,
+  markAt,
   moveRow,
   percentDone,
   Progress,
@@ -33,6 +34,21 @@ describe('toggleCell', () => {
 
     expect(done.doneCells).toEqual([3]);
     expect(toggleCell(done, 3).doneCells).toEqual([]);
+  });
+});
+
+describe('markAt', () => {
+  it('marks the row of a cell in row mode', () => {
+    expect(markAt(chart, EMPTY_PROGRESS, 'row', 1, 2).doneRows).toEqual([2]);
+  });
+
+  it('marks the cell in stitch mode', () => {
+    expect(markAt(chart, EMPTY_PROGRESS, 'stitch', 1, 1).doneCells).toEqual([3]);
+  });
+
+  it('leaves the progress alone beside the chart', () => {
+    expect(markAt(chart, EMPTY_PROGRESS, 'row', 5, 5)).toBe(EMPTY_PROGRESS);
+    expect(markAt(chart, EMPTY_PROGRESS, 'stitch', -1, 0)).toBe(EMPTY_PROGRESS);
   });
 });
 

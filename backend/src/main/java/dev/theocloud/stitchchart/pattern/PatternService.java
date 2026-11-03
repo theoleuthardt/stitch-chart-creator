@@ -47,7 +47,10 @@ class PatternService {
     return PatternResponses.Full.of(patterns.saveAndFlush(new ChartPattern(ownerId, request)));
   }
 
-  /** Saves a pattern. A version older than the stored one answers 409 instead of overwriting. */
+  /**
+   * Saves a pattern. A version older than the stored one answers 409 instead of overwriting. A new
+   * grid starts the progress over, because row and cell numbers mean other stitches then.
+   */
   @Transactional
   PatternResponses.Full update(UUID ownerId, UUID id, PatternRequest request) {
     validate(request);
@@ -58,7 +61,12 @@ class PatternService {
     if (pattern.getVersion() != request.version()) {
       throw staleVersion();
     }
+    boolean sameGrid =
+        pattern.getWidth() == request.width() && pattern.getHeight() == request.height();
     pattern.apply(request);
+    if (!sameGrid) {
+      progress.deleteById(id);
+    }
     try {
       return PatternResponses.Full.of(patterns.saveAndFlush(pattern));
     } catch (ObjectOptimisticLockingFailureException raceWithAnotherSave) {
@@ -88,12 +96,15 @@ class PatternService {
         shareLinks.findById(id).map(ShareLink::getSlug).orElse(null));
   }
 
-  /** Creates the link of a chart. A chart keeps one link, however often it is shared. */
+  /**
+   * Creates the link of a chart. A chart keeps one link, however often it is shared; the insert
+   * settles that in the database, so that a double click cannot end in a conflict.
+   */
   @Transactional
   PatternResponses.ShareStatus share(UUID ownerId, UUID id) {
     find(ownerId, id);
-    ShareLink link = shareLinks.findById(id).orElseGet(() -> shareLinks.save(new ShareLink(id)));
-    return new PatternResponses.ShareStatus(link.getSlug());
+    shareLinks.insertIfMissing(id, ShareLink.newSlug());
+    return new PatternResponses.ShareStatus(shareLinks.findSlug(id));
   }
 
   @Transactional
@@ -135,6 +146,8 @@ class PatternService {
     boolean valid =
         request.currentRow() >= 0
             && request.currentRow() < pattern.getHeight()
+            && request.doneRows().length <= pattern.getHeight()
+            && request.doneCells().length <= pattern.getCells().length
             && Arrays.stream(request.doneRows()).allMatch(row -> inRange(row, pattern.getHeight()))
             && Arrays.stream(request.doneCells())
                 .allMatch(cell -> inRange(cell, pattern.getCells().length));
