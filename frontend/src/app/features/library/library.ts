@@ -49,6 +49,7 @@ const MAX_NEW_CELLS = 16_000_000;
             Create chart
           </button>
         </form>
+        <a class="button import" routerLink="/import">Import an image</a>
         <label class="button import" for="import-file">Open a chart file</label>
         <input
           id="import-file"
@@ -123,7 +124,8 @@ const MAX_NEW_CELLS = 16_000_000;
 
     .import {
       display: inline-block;
-      margin-top: 0.5rem;
+      margin: 0.5rem 0.5rem 0 0;
+      text-decoration: none;
     }
 
     .visually-hidden {
