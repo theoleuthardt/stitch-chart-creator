@@ -1,4 +1,5 @@
 import { expect, Page, test } from '@playwright/test';
+import { statSync } from 'node:fs';
 
 const password = 'correct horse battery';
 
@@ -37,8 +38,11 @@ test('a chart can be created, drawn, saved, found again and exported', async ({ 
   await register(page);
   await createChart(page, 'Smoke test');
 
+  const saved = page.waitForResponse(
+    (response) => response.request().method() === 'PUT' && response.ok(),
+  );
   await draw(page);
-  await expect(page.getByText('All changes saved')).toBeVisible({ timeout: 10_000 });
+  await saved;
   await expect(stitches(page)).not.toHaveText('0');
   const drawn = await stitches(page).textContent();
 
@@ -49,9 +53,11 @@ test('a chart can be created, drawn, saved, found again and exported', async ({ 
   await expect(page.getByRole('link', { name: 'Smoke test' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Smoke test' }).click();
-  const download = page.waitForEvent('download');
+  const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'PNG' }).click();
-  expect((await download).suggestedFilename()).toBe('smoke-test.png');
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe('smoke-test.png');
+  expect(statSync(await download.path()).size).toBeGreaterThan(0);
 });
 
 test('anonymous visitors are sent to sign-in', async ({ page }) => {

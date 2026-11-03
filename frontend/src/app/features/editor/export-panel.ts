@@ -10,6 +10,9 @@ import { renderSvg } from '../../export/to-svg';
 import { fitsExcel, renderXlsx } from '../../export/to-xlsx';
 import { EditorStore } from './editor-store';
 
+/** The largest stitch of an exported image in pixels. */
+const MAX_CELL_SIZE = 200;
+
 /** Turns the open chart into files. */
 @Component({
   selector: 'scc-export-panel',
@@ -144,7 +147,7 @@ export class ExportPanel {
   readonly fits = computed(() => canvasFits(this.size().width, this.size().height));
 
   setCellSize(cellSize: number): void {
-    if (Number.isInteger(cellSize) && cellSize > 0) {
+    if (Number.isInteger(cellSize) && cellSize > 0 && cellSize <= MAX_CELL_SIZE) {
       this.options.update((options) => ({ ...options, cellSize }));
     }
   }

@@ -90,6 +90,16 @@ describe('parsePatternFile', () => {
     expect(rejected(file({ width: 1e9, height: 1e9 }))).toContain('size');
   });
 
+  it('rejects sizes the app could not handle', () => {
+    expect(rejected(file({ width: 5000, height: 5000 }))).toContain('size');
+  });
+
+  it('rejects an absurdly long palette', () => {
+    expect(rejected(file({ palette: new Array<string>(5000).fill('#000000') }))).toContain(
+      'colour',
+    );
+  });
+
   it('rejects a palette that is not colours', () => {
     expect(rejected(file({ palette: 'red' }))).toContain('colour');
     expect(rejected(file({ palette: ['red', '#00ff00'] }))).toContain('colour');
@@ -183,7 +193,10 @@ describe('parsePatternFile', () => {
   });
 
   it('does not let a crafted file touch object prototypes', () => {
-    parsePatternFile('{"__proto__":{"polluted":true},"format":"stitch-chart"}');
+    parsePatternFile(
+      '{"__proto__":{"polluted":true},"format":"stitch-chart","version":1,"title":"x",' +
+        '"craftType":"crossStitch","width":1,"height":1,"palette":[],"cells":[0]}',
+    );
 
     expect(({} as Record<string, unknown>)['polluted']).toBeUndefined();
   });

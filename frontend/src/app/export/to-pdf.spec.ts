@@ -1,5 +1,5 @@
 import { createPattern, Pattern } from '../domain/pattern';
-import { renderPdf } from './to-pdf';
+import { printableText, renderPdf } from './to-pdf';
 
 const pattern: Pattern = {
   ...createPattern(200, 300, 'crossStitch', 'Big rose'),
@@ -15,6 +15,16 @@ const text = (blob: Blob) =>
   });
 
 const pageCount = async (blob: Blob) => ((await text(blob)).match(/\/Type \/Page\b/g) ?? []).length;
+
+describe('printableText', () => {
+  it('keeps the characters of the built-in PDF font', () => {
+    expect(printableText('Blüte à la carte')).toBe('Blüte à la carte');
+  });
+
+  it('replaces what the built-in PDF font cannot show', () => {
+    expect(printableText('Роза 花 🌹')).toBe('???? ? ?');
+  });
+});
 
 describe('renderPdf', () => {
   it('creates a real PDF file', async () => {

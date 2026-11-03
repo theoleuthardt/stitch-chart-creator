@@ -7,6 +7,9 @@ export function fileName(title: string, extension: string): string {
   return `${base || 'chart'}.${extension}`;
 }
 
+/** Some browsers fetch a download asynchronously, so the file has to outlive the click. */
+const REVOKE_DELAY = 60_000;
+
 /** Hands a file to the browser's download. */
 export function downloadFile(name: string, content: Blob): void {
   const url = URL.createObjectURL(content);
@@ -14,5 +17,7 @@ export function downloadFile(name: string, content: Blob): void {
   link.href = url;
   link.download = name;
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, REVOKE_DELAY);
 }

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/** Runs against the production bundle; the backend has to be running on port 8080. */
+/** Runs against the production configuration; the backend has to be running on port 8080. */
 export default defineConfig({
   testDir: 'e2e',
   forbidOnly: !!process.env['CI'],

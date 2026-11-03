@@ -18,8 +18,11 @@ const MAX_GAUGE = 1000;
 /** The longest stitch name the backend accepts. */
 const MAX_STITCH_NAME = 60;
 
-/** Refuses absurd sizes before anything is allocated for them. */
-const MAX_CELLS = 100_000_000;
+/** What fits into one request of the backend, which holds about two bytes per stitch. */
+const MAX_CELLS = 16_000_000;
+
+/** The longest palette the backend accepts. */
+const MAX_PALETTE = 4096;
 
 export type ParseResult = { ok: true; pattern: Pattern } | { ok: false; error: string };
 
@@ -133,6 +136,7 @@ export function parsePatternFile(text: string): ParseResult {
   }
   if (
     !Array.isArray(palette) ||
+    palette.length > MAX_PALETTE ||
     !palette.every((color) => typeof color === 'string' && isHexColor(color))
   ) {
     return fail('The colours of this chart are not valid.');

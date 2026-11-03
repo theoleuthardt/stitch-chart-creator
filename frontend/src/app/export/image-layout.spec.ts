@@ -37,6 +37,16 @@ describe('exportLayout', () => {
     expect(layout.height).toBeGreaterThan(plain.height);
   });
 
+  it('adds nothing for a legend without entries', () => {
+    const empty = createPattern(2, 2);
+
+    expect(exportLayout(empty, { ...options, legend: true })).toMatchObject({
+      width: 20,
+      height: 20,
+      legendRows: 0,
+    });
+  });
+
   it('keeps the legend readable on a narrow chart', () => {
     const narrow = { ...pattern, width: 1, height: 1, cells: [1] };
 

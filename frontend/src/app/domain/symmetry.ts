@@ -1,10 +1,11 @@
 import { Cell } from './shapes';
 
-/** The axes a stroke is mirrored across while drawing. */
+/**
+ * The axes a stroke is mirrored across while drawing. With `horizontal` left and right mirror each
+ * other, with `vertical` top and bottom do.
+ */
 export interface Symmetry {
-  /** Left and right mirror each other. */
   horizontal: boolean;
-  /** Top and bottom mirror each other. */
   vertical: boolean;
 }
 

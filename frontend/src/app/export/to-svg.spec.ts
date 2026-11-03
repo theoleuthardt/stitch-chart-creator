@@ -55,7 +55,10 @@ describe('renderSvg', () => {
     const large = createPattern(20, 1);
     const document = parse(renderSvg(large, { ...options, gridLines: true }));
 
-    expect(document.querySelectorAll('line[stroke-width="2"]').length).toBeGreaterThan(0);
+    const heavy = [...document.querySelectorAll('line[stroke-width="2"]')];
+    const columns = heavy.filter((line) => line.getAttribute('x1') === line.getAttribute('x2'));
+    expect(columns.map((line) => line.getAttribute('x1'))).toEqual(['0', '100', '200']);
+    expect(heavy).toHaveLength(columns.length + 1);
   });
 
   it('numbers rows and columns on request', () => {

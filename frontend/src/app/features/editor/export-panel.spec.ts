@@ -48,11 +48,22 @@ describe('ExportPanel', () => {
     expect(panel.error()).toBe('This chart is larger than an Excel worksheet.');
   });
 
+  it('counts the pages for the chosen paper size', () => {
+    const panel = setup(50, 72);
+    const a4 = panel.pdfPages();
+
+    panel.setPaper('letter');
+
+    expect(panel.pdf().paper).toBe('letter');
+    expect(panel.pdfPages()).toBeGreaterThan(a4);
+  });
+
   it('ignores an invalid cell size', () => {
     const panel = setup(10, 10);
 
     panel.setCellSize(0);
     panel.setCellSize(Number.NaN);
+    panel.setCellSize(201);
 
     expect(panel.options().cellSize).toBe(20);
   });

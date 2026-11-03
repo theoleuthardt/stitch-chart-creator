@@ -10,6 +10,14 @@ const MARGIN = 36;
 const LEGEND_ROW = 22;
 
 /**
+ * The built-in PDF fonts only know Latin-1. Other characters would come out as garbage, so they
+ * become a plain question mark.
+ */
+export function printableText(text: string): string {
+  return [...text].map((character) => (character <= '\u00ff' ? character : '?')).join('');
+}
+
+/**
  * Renders a printable chart: the pages of the chart and a legend page. jsPDF is loaded on demand,
  * because most sessions never export a PDF.
  */
@@ -28,7 +36,11 @@ export async function renderPdf(pattern: Pattern, options: PdfOptions): Promise<
     }
     doc.setFontSize(9);
     doc.setTextColor(0);
-    doc.text(`${pattern.title} - page ${index + 1} of ${layout.pages.length}`, MARGIN, MARGIN);
+    doc.text(
+      `${printableText(pattern.title)} - page ${index + 1} of ${layout.pages.length}`,
+      MARGIN,
+      MARGIN,
+    );
     drawCells(doc, pattern, page, layout);
     drawSymbols(doc, pattern, page, layout);
     drawGrid(doc, page, layout);
@@ -165,7 +177,7 @@ function drawLegend(doc: jsPDF, pattern: Pattern, layout: PdfLayout): void {
   doc.addPage();
   doc.setFontSize(14);
   doc.setTextColor(0);
-  doc.text(`${pattern.title} - colours`, MARGIN, MARGIN);
+  doc.text(`${printableText(pattern.title)} - colours`, MARGIN, MARGIN);
   doc.setFontSize(10);
   let y = MARGIN + 20;
   const nextRow = () => {
@@ -188,7 +200,11 @@ function drawLegend(doc: jsPDF, pattern: Pattern, layout: PdfLayout): void {
     doc.setDrawColor(0);
     doc.setLineWidth(0.8);
     drawSymbol(doc, symbol, MARGIN, y, 24, 16);
-    doc.text(`${symbol.abbreviation}   ${symbol.name}   ${count} stitches`, MARGIN + 34, y + 12);
+    doc.text(
+      `${printableText(`${symbol.abbreviation}   ${symbol.name}`)}   ${count} stitches`,
+      MARGIN + 34,
+      y + 12,
+    );
     y += LEGEND_ROW;
   }
 }

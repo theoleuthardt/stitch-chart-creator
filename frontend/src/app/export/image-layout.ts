@@ -63,9 +63,9 @@ export function exportLayout(pattern: Pattern, options: ExportOptions): ExportLa
   const chartWidth = strip + pattern.width * options.cellSize;
   const chartHeight = strip + pattern.height * cellHeight;
   const legendRows = options.legend ? usedColors(pattern).length + usedSymbols(pattern).length : 0;
-  const legendHeight = options.legend ? LEGEND_PADDING * 2 + legendRows * LEGEND_ROW : 0;
+  const legendHeight = legendRows > 0 ? LEGEND_PADDING * 2 + legendRows * LEGEND_ROW : 0;
   return {
-    width: options.legend ? Math.max(chartWidth, LEGEND_WIDTH) : chartWidth,
+    width: legendRows > 0 ? Math.max(chartWidth, LEGEND_WIDTH) : chartWidth,
     height: chartHeight + legendHeight,
     cellHeight,
     chartX: strip,

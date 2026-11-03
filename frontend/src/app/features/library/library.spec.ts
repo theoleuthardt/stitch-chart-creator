@@ -181,6 +181,52 @@ describe('Library', () => {
     expect(api.create).not.toHaveBeenCalled();
   });
 
+  it('can open the same file twice in a row', async () => {
+    const { fixture, api } = await setup();
+    const file = new File([serializePattern(createPattern(1, 1))], 'chart.json');
+    Object.defineProperty(file, 'text', { value: () => Promise.resolve('nonsense') });
+    const input = { files: [file], value: 'chart.json' } as unknown as HTMLInputElement;
+
+    await fixture.componentInstance.importFile(input);
+
+    expect(input.value).toBe('');
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when no file was chosen', async () => {
+    const { fixture, api } = await setup();
+
+    await fixture.componentInstance.importFile({
+      files: [],
+      value: '',
+    } as unknown as HTMLInputElement);
+
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('shows a message when a file cannot be read', async () => {
+    const { fixture } = await setup();
+
+    await fixture.componentInstance.importText(Promise.reject(new Error('gone')));
+
+    expect(fixture.componentInstance.error()).toBe('This file could not be read.');
+  });
+
+  it('refuses a chart file that is too large before reading it', async () => {
+    const { fixture } = await setup();
+    const huge = new File([], 'huge.json');
+    Object.defineProperty(huge, 'size', { value: 100 * 1024 * 1024 });
+    const text = vi.spyOn(huge, 'text');
+
+    await fixture.componentInstance.importFile({
+      files: [huge],
+      value: '',
+    } as unknown as HTMLInputElement);
+
+    expect(text).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error()).toBe('This file is too large.');
+  });
+
   it('deletes a chart after asking', async () => {
     const { fixture, api } = await setup();
 

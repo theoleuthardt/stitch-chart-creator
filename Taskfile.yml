@@ -60,7 +60,7 @@ tasks:
       - podman compose -f compose.dev.yml down
 
   e2e:
-    desc: Run the browser tests; needs task db:up and task backend:dev
+    desc: Run the browser tests; needs db, backend and npx playwright install chromium
     dir: frontend
     cmds:
       - npm run e2e

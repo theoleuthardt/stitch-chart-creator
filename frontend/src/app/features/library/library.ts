@@ -9,6 +9,9 @@ import { parsePatternFile } from '../../export/pattern-file';
 /** A side of a chart is a positive whole number. */
 const sizeValidators = [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)];
 
+/** The largest chart file that is read. */
+const MAX_FILE_BYTES = 64 * 1024 * 1024;
+
 /** What fits into one request of the backend, whose body holds about two bytes per stitch. */
 const MAX_NEW_CELLS = 16_000_000;
 
@@ -248,11 +251,25 @@ export class Library implements OnInit {
   importFile(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0];
     input.value = '';
-    return file ? this.importText(file.text()) : Promise.resolve();
+    if (!file) {
+      return Promise.resolve();
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      this.error.set('This file is too large.');
+      return Promise.resolve();
+    }
+    return this.importText(file.text());
   }
 
   async importText(text: Promise<string>): Promise<void> {
-    const result = parsePatternFile(await text);
+    let content: string;
+    try {
+      content = await text;
+    } catch {
+      this.error.set('This file could not be read.');
+      return;
+    }
+    const result = parsePatternFile(content);
     if (!result.ok) {
       this.error.set(result.error);
       return;
