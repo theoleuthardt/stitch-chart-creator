@@ -212,6 +212,62 @@ class PatternApiTests {
   }
 
   @Test
+  void gaugeSettingsAreKeptWithTheChart() throws Exception {
+    Cookie session = signUp(mockMvc, uniqueName());
+    String body =
+        VALID.replace(
+            "\"cells\":[0,1,2,0]",
+            "\"cells\":[0,1,2,0],\"gauge\":{\"stitchesPerUnit\":22,\"rowsPerUnit\":30,"
+                + "\"unit\":\"cm10\"}");
+
+    String id =
+        objectMapper
+            .readTree(
+                create(session, body)
+                    .andExpect(status().isCreated())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString())
+            .get("id")
+            .asString();
+
+    mockMvc
+        .perform(get("/api/patterns/" + id).cookie(session))
+        .andExpect(jsonPath("$.gauge.stitchesPerUnit").value(22.0))
+        .andExpect(jsonPath("$.gauge.rowsPerUnit").value(30.0))
+        .andExpect(jsonPath("$.gauge.unit").value("cm10"));
+  }
+
+  @Test
+  void aChartWithoutGaugeSettingsHasNone() throws Exception {
+    Cookie session = signUp(mockMvc, uniqueName());
+    String id = created(session).get("id").asString();
+
+    mockMvc
+        .perform(get("/api/patterns/" + id).cookie(session))
+        .andExpect(jsonPath("$.gauge").value(org.hamcrest.Matchers.nullValue()));
+  }
+
+  @Test
+  void invalidGaugeSettingsAreRejected() throws Exception {
+    Cookie session = signUp(mockMvc, uniqueName());
+
+    String[] gauges = {
+      "{\"stitchesPerUnit\":0,\"rowsPerUnit\":30,\"unit\":\"cm10\"}",
+      "{\"stitchesPerUnit\":22,\"rowsPerUnit\":-1,\"unit\":\"cm10\"}",
+      "{\"stitchesPerUnit\":22,\"rowsPerUnit\":30,\"unit\":\"miles\"}",
+      "{\"stitchesPerUnit\":5000,\"rowsPerUnit\":30,\"unit\":\"cm10\"}",
+    };
+
+    for (String gauge : gauges) {
+      create(
+              session,
+              VALID.replace("\"cells\":[0,1,2,0]", "\"cells\":[0,1,2,0],\"gauge\":" + gauge))
+          .andExpect(status().isBadRequest());
+    }
+  }
+
+  @Test
   void aThumbnailAndSymbolsAreKept() throws Exception {
     Cookie session = signUp(mockMvc, uniqueName());
     String body =

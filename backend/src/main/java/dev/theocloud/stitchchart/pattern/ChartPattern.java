@@ -54,6 +54,15 @@ class ChartPattern {
   @Column(name = "custom_stitches", nullable = false)
   private List<EmbeddedStitch> customStitches = List.of();
 
+  @Column(name = "gauge_stitches")
+  private Double gaugeStitches;
+
+  @Column(name = "gauge_rows")
+  private Double gaugeRows;
+
+  @Column(name = "gauge_unit")
+  private String gaugeUnit;
+
   private String thumbnail;
 
   @Version private long version;
@@ -81,6 +90,10 @@ class ChartPattern {
     cells = request.cells();
     symbols = request.symbols();
     customStitches = request.customStitches() == null ? List.of() : request.customStitches();
+    Gauge gauge = request.gauge();
+    gaugeStitches = gauge == null ? null : gauge.stitchesPerUnit();
+    gaugeRows = gauge == null ? null : gauge.rowsPerUnit();
+    gaugeUnit = gauge == null ? null : gauge.unit();
     thumbnail = request.thumbnail();
     updatedAt = Instant.now();
   }
@@ -119,6 +132,10 @@ class ChartPattern {
 
   List<EmbeddedStitch> getCustomStitches() {
     return customStitches;
+  }
+
+  Gauge getGauge() {
+    return gaugeUnit == null ? null : new Gauge(gaugeStitches, gaugeRows, gaugeUnit);
   }
 
   String getThumbnail() {

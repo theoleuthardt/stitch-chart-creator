@@ -36,7 +36,8 @@ const PAGE_SIZE = 50;
 
 /** The fields of a pattern the backend accepts, nothing that only exists in the editor. */
 function body(pattern: Pattern, version?: number) {
-  const { title, craftType, width, height, palette, cells, symbols, customStitches } = pattern;
+  const { title, craftType, width, height, palette, cells, symbols, customStitches, gauge } =
+    pattern;
   return {
     title,
     craftType,
@@ -46,6 +47,7 @@ function body(pattern: Pattern, version?: number) {
     cells,
     symbols,
     customStitches,
+    gauge,
     thumbnail: renderThumbnail(pattern),
     version,
   };
@@ -53,9 +55,10 @@ function body(pattern: Pattern, version?: number) {
 
 /** The backend sends `null` and `[]` for what a chart does not have; the model leaves it out. */
 function fromServer(stored: StoredPattern): StoredPattern {
-  const { symbols, customStitches, ...pattern } = stored;
+  const { symbols, customStitches, gauge, ...pattern } = stored;
   return {
     ...pattern,
+    ...(gauge ? { gauge } : {}),
     ...(symbols ? { symbols } : {}),
     ...(customStitches?.length ? { customStitches } : {}),
   };

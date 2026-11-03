@@ -164,6 +164,24 @@ describe('parsePatternFile', () => {
     });
   });
 
+  it('keeps the gauge of a chart', () => {
+    const gauge = { stitchesPerUnit: 22, rowsPerUnit: 30, unit: 'cm10' as const };
+
+    const result = parsePatternFile(serializePattern({ ...pattern, gauge }));
+
+    expect(result.ok && result.pattern.gauge).toEqual(gauge);
+  });
+
+  it('rejects an impossible gauge', () => {
+    expect(rejected(file({ gauge: 'tight' }))).toContain('gauge');
+    expect(rejected(file({ gauge: { stitchesPerUnit: 0, rowsPerUnit: 1, unit: 'cm' } }))).toContain(
+      'gauge',
+    );
+    expect(
+      rejected(file({ gauge: { stitchesPerUnit: 1, rowsPerUnit: 1, unit: 'mile' } })),
+    ).toContain('gauge');
+  });
+
   it('does not let a crafted file touch object prototypes', () => {
     parsePatternFile('{"__proto__":{"polluted":true},"format":"stitch-chart"}');
 

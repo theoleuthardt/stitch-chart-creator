@@ -27,6 +27,7 @@ import { ChartSettings } from './chart-settings';
 import { CheckPanel } from './check-panel';
 import { EditorStore, Tool } from './editor-store';
 import { ExportPanel } from './export-panel';
+import { GaugePanel } from './gauge-panel';
 import { PalettePanel } from './palette-panel';
 import { shortcutFor } from './shortcuts';
 import { SymbolPanel } from './symbol-panel';
@@ -49,6 +50,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
     ChartSettings,
     CheckPanel,
     ExportPanel,
+    GaugePanel,
     PalettePanel,
     SymbolPanel,
   ],
@@ -129,6 +131,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
             <scc-chart-settings />
             <scc-symbol-panel />
             <scc-palette-panel />
+            <scc-gauge-panel />
             <scc-check-panel (jump)="canvas().focus($event)" />
             <scc-export-panel />
           </aside>

@@ -19,5 +19,6 @@ record PatternRequest(
     @NotNull int[] cells,
     int[] symbols,
     @Size(max = 256) List<@NotNull @Valid EmbeddedStitch> customStitches,
+    @Valid Gauge gauge,
     @Size(max = 65536) @Pattern(regexp = "data:image/png;base64,[A-Za-z0-9+/=]*") String thumbnail,
     Long version) {}

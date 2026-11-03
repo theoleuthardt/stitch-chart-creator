@@ -1,3 +1,4 @@
+import type { Gauge } from './gauge';
 import type { StitchSymbol } from './symbols';
 
 /** The crafts a chart can be made for. */
@@ -18,6 +19,7 @@ export interface Pattern {
   cells: number[];
   symbols?: number[];
   customStitches?: StitchSymbol[];
+  gauge?: Gauge;
 }
 
 /** The colour of a new chart. */

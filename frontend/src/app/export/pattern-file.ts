@@ -1,3 +1,4 @@
+import { Gauge } from '../domain/gauge';
 import { isHexColor } from '../domain/palette';
 import { CraftType, Pattern } from '../domain/pattern';
 import { FIRST_CUSTOM_ID, isStitchAbbreviation, StitchSymbol } from '../domain/symbols';
@@ -9,6 +10,11 @@ const CRAFT_TYPES: readonly CraftType[] = ['crossStitch', 'knitting', 'crochet',
 /** The longest title the backend accepts. */
 const MAX_TITLE = 200;
 
+const GAUGE_UNITS: readonly Gauge['unit'][] = ['cm', 'cm10', 'in', 'in4'];
+
+/** The largest gauge the backend accepts. */
+const MAX_GAUGE = 1000;
+
 /** The longest stitch name the backend accepts. */
 const MAX_STITCH_NAME = 60;
 
@@ -19,7 +25,8 @@ export type ParseResult = { ok: true; pattern: Pattern } | { ok: false; error: s
 
 /** Writes a chart as a file. Only the chart itself goes in, nothing the server added. */
 export function serializePattern(pattern: Pattern): string {
-  const { title, craftType, width, height, palette, cells, symbols, customStitches } = pattern;
+  const { title, craftType, width, height, palette, cells, symbols, customStitches, gauge } =
+    pattern;
   return JSON.stringify({
     format: FORMAT,
     version: VERSION,
@@ -31,7 +38,22 @@ export function serializePattern(pattern: Pattern): string {
     cells,
     symbols,
     customStitches,
+    gauge,
   });
+}
+
+function isGauge(value: unknown): value is Gauge {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const { stitchesPerUnit, rowsPerUnit, unit } = value as Record<string, unknown>;
+  const positive = (number: unknown) =>
+    typeof number === 'number' && number > 0 && number <= MAX_GAUGE;
+  return (
+    positive(stitchesPerUnit) &&
+    positive(rowsPerUnit) &&
+    GAUGE_UNITS.includes(unit as Gauge['unit'])
+  );
 }
 
 function isShapeList(value: unknown, size: number): boolean {
@@ -93,7 +115,7 @@ export function parsePatternFile(text: string): ParseResult {
     return fail('This file needs a newer version of the app.');
   }
 
-  const { title, craftType, width, height, palette, cells, symbols, customStitches } = file;
+  const { title, craftType, width, height, palette, cells, symbols, customStitches, gauge } = file;
   if (typeof title !== 'string' || !title.trim() || title.length > MAX_TITLE) {
     return fail('The title of this chart is not valid.');
   }
@@ -141,6 +163,10 @@ export function parsePatternFile(text: string): ParseResult {
     return fail('The symbols of this chart are not valid.');
   }
 
+  if (gauge !== undefined && !isGauge(gauge)) {
+    return fail('The gauge of this chart is not valid.');
+  }
+
   return {
     ok: true,
     pattern: {
@@ -152,6 +178,7 @@ export function parsePatternFile(text: string): ParseResult {
       cells: cells as number[],
       ...(symbols ? { symbols: symbols as number[] } : {}),
       ...(customStitches ? { customStitches } : {}),
+      ...(gauge ? { gauge } : {}),
     },
   };
 }

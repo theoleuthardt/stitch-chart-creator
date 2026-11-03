@@ -96,6 +96,23 @@ describe('PatternApi', () => {
     await created;
   });
 
+  it('turns missing gauge settings into a field that does not exist', async () => {
+    const loaded = api.get('a');
+    http.expectOne('/api/patterns/a').flush({ id: 'a', gauge: null });
+
+    expect(await loaded).not.toHaveProperty('gauge');
+  });
+
+  it('sends the gauge of a chart', async () => {
+    const gauge = { stitchesPerUnit: 22, rowsPerUnit: 30, unit: 'cm10' as const };
+
+    const created = api.create({ ...createPattern(1, 1), gauge });
+    const request = http.expectOne('/api/patterns');
+    expect(request.request.body).toMatchObject({ gauge });
+    request.flush({ id: 'a' });
+    await created;
+  });
+
   it('keeps a symbol layer', async () => {
     const loaded = api.get('a');
     http.expectOne('/api/patterns/a').flush({ id: 'a', symbols: [1, 2] });
