@@ -1,5 +1,5 @@
 import { Pattern } from '../domain/pattern';
-import { StitchSymbol, symbolById, usedSymbols } from '../domain/symbols';
+import { StitchDrawing, symbolFor, usedSymbols } from '../domain/symbols';
 import { exportLayout, ExportLayout, ExportOptions, LEGEND_ROW, usedColors } from './image-layout';
 
 const GRID_MINOR = '#b8b8b8';
@@ -50,9 +50,18 @@ function cells(pattern: Pattern, options: ExportOptions, layout: ExportLayout): 
   return parts.join('');
 }
 
+/** Text of a custom stitch comes from the user. */
+function escapeXml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
 /** One symbol as lines and circles inside a rectangle. */
 function symbolShapes(
-  symbol: StitchSymbol,
+  symbol: StitchDrawing,
   x: number,
   y: number,
   width: number,
@@ -78,7 +87,7 @@ function symbols(pattern: Pattern, options: ExportOptions, layout: ExportLayout)
     `<g class="symbols" fill="none" stroke="#000000" stroke-width="${Math.max(1, cellSize / 12)}">`,
   ];
   pattern.symbols.forEach((id, index) => {
-    const symbol = symbolById(id);
+    const symbol = symbolFor(pattern, id);
     if (symbol) {
       const x = layout.chartX + (index % pattern.width) * cellSize;
       const y = layout.chartY + Math.floor(index / pattern.width) * layout.cellHeight;
@@ -131,7 +140,7 @@ function legend(pattern: Pattern, layout: ExportLayout): string {
     const y = layout.legendY + 12 + (colors.length + index) * LEGEND_ROW;
     return (
       `<g fill="none" stroke="#000000" stroke-width="1.5">${symbolShapes(symbol, 12, y + 2, 24, 20)}</g>` +
-      `<text x="48" y="${y + 12}" dominant-baseline="middle">${symbol.abbreviation}   ${symbol.name}   ${count} stitches</text>`
+      `<text x="48" y="${y + 12}" dominant-baseline="middle">${escapeXml(symbol.abbreviation)}   ${escapeXml(symbol.name)}   ${count} stitches</text>`
     );
   });
   return colors

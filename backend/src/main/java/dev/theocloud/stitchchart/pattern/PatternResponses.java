@@ -1,5 +1,6 @@
 package dev.theocloud.stitchchart.pattern;
 
+import dev.theocloud.stitchchart.stitch.EmbeddedStitch;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,7 @@ final class PatternResponses {
       String[] palette,
       int[] cells,
       int[] symbols,
+      List<EmbeddedStitch> customStitches,
       String thumbnail,
       long version,
       Instant createdAt,
@@ -33,6 +35,7 @@ final class PatternResponses {
           pattern.getPalette(),
           pattern.getCells(),
           pattern.getSymbols(),
+          pattern.getCustomStitches(),
           pattern.getThumbnail(),
           pattern.getVersion(),
           pattern.getCreatedAt(),

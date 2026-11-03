@@ -1,6 +1,6 @@
 import type { Cell, Sheet } from 'write-excel-file/browser';
 import { Pattern } from '../domain/pattern';
-import { cellAspect, symbolById, usedSymbols } from '../domain/symbols';
+import { cellAspect, symbolFor, usedSymbols } from '../domain/symbols';
 import { usedColors } from './image-layout';
 
 /** The columns of a worksheet. */
@@ -29,7 +29,7 @@ export function excelSheets(pattern: Pattern): Sheet<Blob>[] {
     for (let x = 0; x < pattern.width; x++) {
       const index = y * pattern.width + x;
       const color = pattern.palette[(pattern.cells[index] ?? 0) - 1];
-      const symbol = symbolById(pattern.symbols?.[index] ?? 0);
+      const symbol = symbolFor(pattern, pattern.symbols?.[index] ?? 0);
       row.push(
         color || symbol
           ? {

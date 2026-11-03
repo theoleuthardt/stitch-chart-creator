@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { createPattern } from '../domain/pattern';
+import { StitchSymbol } from '../domain/symbols';
 import { PatternApi } from './pattern-api';
 
 describe('PatternApi', () => {
@@ -69,6 +70,30 @@ describe('PatternApi', () => {
     http.expectOne('/api/patterns/a').flush({ id: 'a', symbols: null });
 
     expect(await loaded).not.toHaveProperty('symbols');
+  });
+
+  it('drops an empty list of custom stitches', async () => {
+    const loaded = api.get('a');
+    http.expectOne('/api/patterns/a').flush({ id: 'a', customStitches: [] });
+
+    expect(await loaded).not.toHaveProperty('customStitches');
+  });
+
+  it('sends the custom stitches of a chart', async () => {
+    const stitch: StitchSymbol = {
+      id: 1000,
+      name: 'B',
+      abbreviation: 'b',
+      lines: [],
+      circles: [[0, 0, 0]],
+    };
+    const pattern = { ...createPattern(1, 1), customStitches: [stitch] };
+
+    const created = api.create(pattern);
+    const request = http.expectOne('/api/patterns');
+    expect(request.request.body).toMatchObject({ customStitches: [stitch] });
+    request.flush({ id: 'a' });
+    await created;
   });
 
   it('keeps a symbol layer', async () => {

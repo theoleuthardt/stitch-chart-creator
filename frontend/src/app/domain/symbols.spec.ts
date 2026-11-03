@@ -2,8 +2,11 @@ import { createPattern, Pattern } from './pattern';
 import {
   cellAspect,
   contrastColor,
+  embedStitch,
   setSymbols,
+  StitchDrawing,
   symbolById,
+  symbolFor,
   SYMBOLS,
   symbolsFor,
   usedSymbols,
@@ -40,6 +43,53 @@ describe('the symbol library', () => {
   it('finds a symbol by id', () => {
     expect(symbolById(SYMBOLS[0]?.id ?? 0)).toBe(SYMBOLS[0]);
     expect(symbolById(9999)).toBeUndefined();
+  });
+});
+
+describe('custom stitches', () => {
+  const bobble: StitchDrawing = {
+    name: 'Bobble',
+    abbreviation: 'bo',
+    lines: [[0, 0, 1, 1]],
+    circles: [],
+  };
+
+  it('embeds a stitch in the chart under the first free number', () => {
+    const { pattern, id } = embedStitch(createPattern(1, 1, 'crochet'), bobble);
+
+    expect(id).toBe(1000);
+    expect(pattern.customStitches).toEqual([{ ...bobble, id: 1000 }]);
+  });
+
+  it('gives the next stitch the next number', () => {
+    const first = embedStitch(createPattern(1, 1), bobble).pattern;
+
+    expect(embedStitch(first, { ...bobble, name: 'Popcorn' }).id).toBe(1001);
+  });
+
+  it('reuses a stitch that is already in the chart', () => {
+    const first = embedStitch(createPattern(1, 1), bobble).pattern;
+
+    const second = embedStitch(first, bobble);
+
+    expect(second.id).toBe(1000);
+    expect(second.pattern).toBe(first);
+  });
+
+  it('finds built-in and embedded stitches', () => {
+    const { pattern, id } = embedStitch(createPattern(1, 1), bobble);
+
+    expect(symbolFor(pattern, 1)?.name).toBe('Knit');
+    expect(symbolFor(pattern, id)?.name).toBe('Bobble');
+    expect(symbolFor(pattern, 1234)).toBeUndefined();
+  });
+
+  it('counts embedded stitches', () => {
+    const { pattern, id } = embedStitch(createPattern(2, 1), bobble);
+
+    expect(usedSymbols({ ...pattern, symbols: [id, id] })).toEqual([
+      { symbol: expect.objectContaining({ name: 'Bobble' }), count: 2 },
+    ]);
   });
 });
 

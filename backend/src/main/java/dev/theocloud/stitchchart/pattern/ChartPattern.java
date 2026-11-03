@@ -1,6 +1,8 @@
 package dev.theocloud.stitchchart.pattern;
 
+import dev.theocloud.stitchchart.stitch.EmbeddedStitch;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -47,6 +50,10 @@ class ChartPattern {
   @JdbcTypeCode(SqlTypes.ARRAY)
   private int[] symbols;
 
+  @Convert(converter = EmbeddedStitchesConverter.class)
+  @Column(name = "custom_stitches", nullable = false)
+  private List<EmbeddedStitch> customStitches = List.of();
+
   private String thumbnail;
 
   @Version private long version;
@@ -73,6 +80,7 @@ class ChartPattern {
     palette = request.palette().toArray(String[]::new);
     cells = request.cells();
     symbols = request.symbols();
+    customStitches = request.customStitches() == null ? List.of() : request.customStitches();
     thumbnail = request.thumbnail();
     updatedAt = Instant.now();
   }
@@ -107,6 +115,10 @@ class ChartPattern {
 
   int[] getSymbols() {
     return symbols;
+  }
+
+  List<EmbeddedStitch> getCustomStitches() {
+    return customStitches;
   }
 
   String getThumbnail() {

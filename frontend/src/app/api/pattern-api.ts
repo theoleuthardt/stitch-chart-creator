@@ -35,7 +35,7 @@ const PAGE_SIZE = 50;
 
 /** The fields of a pattern the backend accepts, nothing that only exists in the editor. */
 function body(pattern: Pattern, version?: number) {
-  const { title, craftType, width, height, palette, cells, symbols } = pattern;
+  const { title, craftType, width, height, palette, cells, symbols, customStitches } = pattern;
   return {
     title,
     craftType,
@@ -44,15 +44,20 @@ function body(pattern: Pattern, version?: number) {
     palette,
     cells,
     symbols,
+    customStitches,
     thumbnail: renderThumbnail(pattern),
     version,
   };
 }
 
-/** The backend sends `null` for a chart without symbols; the model has no such field then. */
+/** The backend sends `null` and `[]` for what a chart does not have; the model leaves it out. */
 function fromServer(stored: StoredPattern): StoredPattern {
-  const { symbols, ...pattern } = stored;
-  return symbols ? stored : pattern;
+  const { symbols, customStitches, ...pattern } = stored;
+  return {
+    ...pattern,
+    ...(symbols ? { symbols } : {}),
+    ...(customStitches?.length ? { customStitches } : {}),
+  };
 }
 
 /** The route of a chart. An id from the address stays inside its path segment. */

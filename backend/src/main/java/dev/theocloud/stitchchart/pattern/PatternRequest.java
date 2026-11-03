@@ -1,5 +1,7 @@
 package dev.theocloud.stitchchart.pattern;
 
+import dev.theocloud.stitchchart.stitch.EmbeddedStitch;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,5 +18,6 @@ record PatternRequest(
     @NotNull @Size(max = 4096) List<@NotNull @Pattern(regexp = "#[0-9a-fA-F]{6}") String> palette,
     @NotNull int[] cells,
     int[] symbols,
+    @Size(max = 256) List<@NotNull @Valid EmbeddedStitch> customStitches,
     @Size(max = 65536) @Pattern(regexp = "data:image/png;base64,[A-Za-z0-9+/=]*") String thumbnail,
     Long version) {}

@@ -1,5 +1,6 @@
 import { isHexColor } from '../domain/palette';
 import { CraftType, Pattern } from '../domain/pattern';
+import { FIRST_CUSTOM_ID, isStitchAbbreviation, StitchSymbol } from '../domain/symbols';
 
 const FORMAT = 'stitch-chart';
 const VERSION = 1;
@@ -8,6 +9,9 @@ const CRAFT_TYPES: readonly CraftType[] = ['crossStitch', 'knitting', 'crochet',
 /** The longest title the backend accepts. */
 const MAX_TITLE = 200;
 
+/** The longest stitch name the backend accepts. */
+const MAX_STITCH_NAME = 60;
+
 /** Refuses absurd sizes before anything is allocated for them. */
 const MAX_CELLS = 100_000_000;
 
@@ -15,7 +19,7 @@ export type ParseResult = { ok: true; pattern: Pattern } | { ok: false; error: s
 
 /** Writes a chart as a file. Only the chart itself goes in, nothing the server added. */
 export function serializePattern(pattern: Pattern): string {
-  const { title, craftType, width, height, palette, cells, symbols } = pattern;
+  const { title, craftType, width, height, palette, cells, symbols, customStitches } = pattern;
   return JSON.stringify({
     format: FORMAT,
     version: VERSION,
@@ -26,7 +30,40 @@ export function serializePattern(pattern: Pattern): string {
     palette,
     cells,
     symbols,
+    customStitches,
   });
+}
+
+function isShapeList(value: unknown, size: number): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (shape) =>
+        Array.isArray(shape) &&
+        shape.length === size &&
+        shape.every((number) => typeof number === 'number' && number >= 0 && number <= 1),
+    )
+  );
+}
+
+/** Whether a value is a complete stitch with a drawing of plain numbers. */
+function isStitch(value: unknown): value is StitchSymbol {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const { id, name, abbreviation, lines, circles } = value as Record<string, unknown>;
+  return (
+    isCount(id) &&
+    id >= FIRST_CUSTOM_ID &&
+    typeof name === 'string' &&
+    name.trim().length > 0 &&
+    name.length <= MAX_STITCH_NAME &&
+    typeof abbreviation === 'string' &&
+    isStitchAbbreviation(abbreviation) &&
+    isShapeList(lines, 4) &&
+    isShapeList(circles, 3) &&
+    (lines as unknown[]).length + (circles as unknown[]).length > 0
+  );
 }
 
 function isCount(value: unknown): value is number {
@@ -56,7 +93,7 @@ export function parsePatternFile(text: string): ParseResult {
     return fail('This file needs a newer version of the app.');
   }
 
-  const { title, craftType, width, height, palette, cells, symbols } = file;
+  const { title, craftType, width, height, palette, cells, symbols, customStitches } = file;
   if (typeof title !== 'string' || !title.trim() || title.length > MAX_TITLE) {
     return fail('The title of this chart is not valid.');
   }
@@ -87,10 +124,19 @@ export function parsePatternFile(text: string): ParseResult {
     return fail('The cells of this chart are not valid.');
   }
   if (
+    customStitches !== undefined &&
+    (!Array.isArray(customStitches) || !customStitches.every(isStitch))
+  ) {
+    return fail('The stitches of this chart are not valid.');
+  }
+  const stitchIds = new Set((customStitches ?? []).map((stitch) => stitch.id));
+  if (
     symbols !== undefined &&
     (!Array.isArray(symbols) ||
       symbols.length !== width * height ||
-      !symbols.every((symbol) => isCount(symbol)))
+      !symbols.every(
+        (symbol) => isCount(symbol) && (symbol < FIRST_CUSTOM_ID || stitchIds.has(symbol)),
+      ))
   ) {
     return fail('The symbols of this chart are not valid.');
   }
@@ -105,6 +151,7 @@ export function parsePatternFile(text: string): ParseResult {
       palette: palette as string[],
       cells: cells as number[],
       ...(symbols ? { symbols: symbols as number[] } : {}),
+      ...(customStitches ? { customStitches } : {}),
     },
   };
 }

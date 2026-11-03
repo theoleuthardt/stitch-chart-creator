@@ -1,6 +1,8 @@
 package dev.theocloud.stitchchart.pattern;
 
-import java.util.Arrays;
+import dev.theocloud.stitchchart.stitch.EmbeddedStitch;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -81,13 +83,29 @@ class PatternService {
     if (request.symbols() != null && request.symbols().length != cellCount) {
       throw invalid("symbols must have width * height entries");
     }
-    if (request.symbols() != null && Arrays.stream(request.symbols()).anyMatch(id -> id < 0)) {
-      throw invalid("symbols must not be negative");
+    if (request.symbols() != null) {
+      validateSymbols(request);
     }
     int colors = request.palette().size();
     for (int cell : request.cells()) {
       if (cell < 0 || cell > colors) {
         throw invalid("cells must refer to the palette");
+      }
+    }
+  }
+
+  /** A symbol is a built-in stitch, or one of the custom stitches embedded in the chart. */
+  private static void validateSymbols(PatternRequest request) {
+    Set<Integer> embedded = new HashSet<>();
+    if (request.customStitches() != null) {
+      request.customStitches().forEach(stitch -> embedded.add(stitch.id()));
+    }
+    for (int id : request.symbols()) {
+      if (id < 0) {
+        throw invalid("symbols must not be negative");
+      }
+      if (id >= EmbeddedStitch.FIRST_ID && !embedded.contains(id)) {
+        throw invalid("symbols must refer to the stitches of the chart");
       }
     }
   }

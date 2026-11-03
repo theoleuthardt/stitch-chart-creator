@@ -2,17 +2,24 @@ import { CraftType, inBounds, Pattern } from './pattern';
 import { Cell } from './shapes';
 
 /**
- * A stitch symbol, drawn from lines and circles in a unit square. Plain numbers work the same on a
- * canvas, in SVG and in PDF, and they cannot carry markup.
+ * A stitch, drawn from lines and circles in a unit square. Plain numbers work the same on a canvas,
+ * in SVG and in PDF, and they cannot carry markup.
  */
-export interface StitchSymbol {
-  id: number;
-  craft: CraftType;
+export interface StitchDrawing {
   name: string;
   abbreviation: string;
   lines: readonly (readonly [number, number, number, number])[];
   circles: readonly (readonly [number, number, number])[];
 }
+
+/** A stitch on a chart: the number the symbol layer refers to, and its craft if it is built in. */
+export interface StitchSymbol extends StitchDrawing {
+  id: number;
+  craft?: CraftType;
+}
+
+/** The first number for custom stitches. Built-in stitches stay below it. */
+export const FIRST_CUSTOM_ID = 1000;
 
 /** The built-in stitches. The ids are stored in charts and must never change. */
 export const SYMBOLS: readonly StitchSymbol[] = [
@@ -189,6 +196,35 @@ export function symbolById(id: number): StitchSymbol | undefined {
   return SYMBOLS.find((symbol) => symbol.id === id);
 }
 
+/** The stitch behind a number of a chart's symbol layer. */
+export function symbolFor(pattern: Pattern, id: number): StitchSymbol | undefined {
+  return id >= FIRST_CUSTOM_ID
+    ? pattern.customStitches?.find((stitch) => stitch.id === id)
+    : symbolById(id);
+}
+
+export function isStitchAbbreviation(value: string): boolean {
+  return /^[\p{L}\p{N} ._+/-]{1,12}$/u.test(value);
+}
+
+/** Adds a copy of a stitch to a chart, unless the chart already has the same one. */
+export function embedStitch(
+  pattern: Pattern,
+  stitch: StitchDrawing,
+): { pattern: Pattern; id: number } {
+  const stitches = pattern.customStitches ?? [];
+  const same = (other: StitchDrawing) =>
+    other.name === stitch.name &&
+    other.abbreviation === stitch.abbreviation &&
+    JSON.stringify([other.lines, other.circles]) === JSON.stringify([stitch.lines, stitch.circles]);
+  const existing = stitches.find(same);
+  if (existing) {
+    return { pattern, id: existing.id };
+  }
+  const id = Math.max(FIRST_CUSTOM_ID - 1, ...stitches.map((entry) => entry.id)) + 1;
+  return { pattern: { ...pattern, customStitches: [...stitches, { ...stitch, id }] }, id };
+}
+
 /** Height of a stitch relative to its width. Knitted stitches are wider than tall. */
 export function cellAspect(craft: CraftType): number {
   return craft === 'knitting' ? 0.8 : 1;
@@ -216,10 +252,12 @@ export function usedSymbols(pattern: Pattern): { symbol: StitchSymbol; count: nu
       counts.set(id, (counts.get(id) ?? 0) + 1);
     }
   }
-  return SYMBOLS.filter((symbol) => counts.has(symbol.id)).map((symbol) => ({
-    symbol,
-    count: counts.get(symbol.id) ?? 0,
-  }));
+  return [...SYMBOLS, ...(pattern.customStitches ?? [])]
+    .filter((symbol) => counts.has(symbol.id))
+    .map((symbol) => ({
+      symbol,
+      count: counts.get(symbol.id) ?? 0,
+    }));
 }
 
 /** Black or white, whichever reads better on a colour. */

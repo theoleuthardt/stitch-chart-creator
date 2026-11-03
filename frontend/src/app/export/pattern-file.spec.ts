@@ -1,4 +1,5 @@
 import { createPattern, Pattern } from '../domain/pattern';
+import { StitchSymbol } from '../domain/symbols';
 import { parsePatternFile, serializePattern } from './pattern-file';
 
 const pattern: Pattern = {
@@ -111,6 +112,56 @@ describe('parsePatternFile', () => {
     expect(rejected(file({ symbols: [1] }))).toContain('symbols');
     expect(rejected(file({ symbols: [1, 0, 0, -2] }))).toContain('symbols');
     expect(rejected(file({ symbols: 'x' }))).toContain('symbols');
+  });
+
+  describe('custom stitches', () => {
+    const stitch: StitchSymbol = {
+      id: 1000,
+      name: 'Bobble',
+      abbreviation: 'bo',
+      lines: [[0, 0, 1, 1]],
+      circles: [],
+    };
+    const withStitch = (changes: Record<string, unknown>) =>
+      file({ symbols: [1000, 0, 0, 1], customStitches: [stitch], ...changes });
+
+    it('come back with the chart', () => {
+      const result = parsePatternFile(withStitch({}));
+
+      expect(result.ok && result.pattern.customStitches).toEqual([stitch]);
+    });
+
+    it('are written to the file', () => {
+      const data = JSON.parse(serializePattern({ ...pattern, customStitches: [stitch] })) as Record<
+        string,
+        unknown
+      >;
+
+      expect(data['customStitches']).toEqual([stitch]);
+    });
+
+    it('may not refer to a stitch the file does not have', () => {
+      expect(rejected(file({ symbols: [1000, 0, 0, 0] }))).toContain('symbols');
+    });
+
+    it('are checked like everything else in a file', () => {
+      const broken = [
+        'nonsense',
+        [{ ...stitch, id: 5 }],
+        [{ ...stitch, name: '' }],
+        [{ ...stitch, name: 7 }],
+        [{ ...stitch, abbreviation: '<b>' }],
+        [{ ...stitch, lines: [[0, 0, 1]] }],
+        [{ ...stitch, lines: [[0, 0, 1, 2]] }],
+        [{ ...stitch, lines: 'M0 0' }],
+        [{ ...stitch, circles: [[0.5, 0.5]] }],
+        [{ ...stitch, lines: [], circles: [] }],
+      ];
+
+      for (const customStitches of broken) {
+        expect(rejected(withStitch({ customStitches }))).toContain('stitches');
+      }
+    });
   });
 
   it('does not let a crafted file touch object prototypes', () => {

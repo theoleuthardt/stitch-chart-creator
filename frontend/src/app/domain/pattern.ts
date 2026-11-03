@@ -1,9 +1,12 @@
+import type { StitchSymbol } from './symbols';
+
 /** The crafts a chart can be made for. */
 export type CraftType = 'crossStitch' | 'knitting' | 'crochet' | 'pixelArt';
 
 /**
  * A chart. `cells` is a flat array of length `width * height`, row by row; the value `n` refers to
  * `palette[n - 1]` and `0` is empty. `symbols` has the same layout and holds a symbol id per cell.
+ * `customStitches` holds a copy of the custom stitches the chart uses, numbered from 1000.
  * A pattern is immutable: every operation returns a new one and shares nothing it changed.
  */
 export interface Pattern {
@@ -14,6 +17,7 @@ export interface Pattern {
   palette: string[];
   cells: number[];
   symbols?: number[];
+  customStitches?: StitchSymbol[];
 }
 
 /** The colour of a new chart. */

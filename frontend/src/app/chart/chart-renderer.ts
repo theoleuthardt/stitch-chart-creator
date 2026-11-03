@@ -1,5 +1,5 @@
 import { Pattern } from '../domain/pattern';
-import { contrastColor, StitchSymbol, symbolById } from '../domain/symbols';
+import { contrastColor, StitchDrawing, symbolFor } from '../domain/symbols';
 import { CellRange, cellHeight, Viewport, visibleRange } from '../domain/viewport';
 
 /** The part of a 2D canvas context the renderer uses. */
@@ -143,7 +143,7 @@ export function drawCells(
 /** Adds one symbol to the current path, inside the given rectangle. */
 export function traceSymbol(
   ctx: ChartCanvasContext,
-  symbol: StitchSymbol,
+  symbol: StitchDrawing,
   x: number,
   y: number,
   width: number,
@@ -178,7 +178,7 @@ export function drawSymbols(
     for (let y = range.fromY; y <= range.toY; y++) {
       for (let x = range.fromX; x <= range.toX; x++) {
         const index = y * pattern.width + x;
-        const symbol = symbolById(symbols[index] ?? 0);
+        const symbol = symbolFor(pattern, symbols[index] ?? 0);
         const color = pattern.palette[(pattern.cells[index] ?? 0) - 1];
         if (symbol && (color ? contrastColor(color) : '#000000') === ink) {
           traceSymbol(ctx, symbol, offsetX + x * scale, offsetY + y * rowHeight, scale, rowHeight);

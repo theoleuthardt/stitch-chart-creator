@@ -3,7 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { PatternApi, PatternSummary } from '../../api/pattern-api';
-import { CraftType, createPattern, Pattern } from '../../domain/pattern';
+import { CraftType, createPattern } from '../../domain/pattern';
 import { parsePatternFile } from '../../export/pattern-file';
 
 /** A side of a chart is a positive whole number. */
@@ -263,11 +263,8 @@ export class Library implements OnInit {
 
   duplicate(chart: PatternSummary): Promise<void> {
     return this.attempt(async () => {
-      const { title, craftType, width, height, palette, cells, symbols } = await this.api.get(
-        chart.id,
-      );
-      const copy: Pattern = { title: `${title} copy`, craftType, width, height, palette, cells };
-      const created = await this.api.create(symbols ? { ...copy, symbols } : copy);
+      const original = await this.api.get(chart.id);
+      const created = await this.api.create({ ...original, title: `${original.title} copy` });
       this.charts.update((charts) => [
         { ...chart, id: created.id, title: created.title },
         ...charts,
