@@ -19,16 +19,22 @@ export function changeColor(pattern: Pattern, colorNumber: number, color: string
   };
 }
 
+/** The number of a colour after the colour `removed` left the palette. */
+export function numberAfterRemoval(colorNumber: number, removed: number): number {
+  return colorNumber > removed ? colorNumber - 1 : colorNumber;
+}
+
 /**
  * Drops a palette entry. Its cells take the colour `replacement`, or become empty with `0`. Both
  * numbers are the ones before the removal; the colours behind the removed one move down one place.
  */
 export function removeColor(pattern: Pattern, colorNumber: number, replacement: number): Pattern {
-  const renumber = (value: number) => (value > colorNumber ? value - 1 : value);
   return {
     ...pattern,
     palette: pattern.palette.filter((_, index) => index !== colorNumber - 1),
-    cells: pattern.cells.map((cell) => renumber(cell === colorNumber ? replacement : cell)),
+    cells: pattern.cells.map((cell) =>
+      numberAfterRemoval(cell === colorNumber ? replacement : cell, colorNumber),
+    ),
   };
 }
 

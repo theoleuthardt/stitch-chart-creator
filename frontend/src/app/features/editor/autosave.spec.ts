@@ -116,6 +116,23 @@ describe('Autosave', () => {
     expect(autosave.status()).toBe('saved');
   });
 
+  it('starts only one save when overwriting twice', async () => {
+    let finish: (version: number) => void = () => undefined;
+    save.mockRejectedValueOnce(new HttpErrorResponse({ status: 409 }));
+    draw(0);
+    await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY);
+    save.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+
+    autosave.overwrite(9);
+    autosave.overwrite(9);
+    await vi.advanceTimersByTimeAsync(0);
+    finish(10);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(autosave.status()).toBe('saved');
+  });
+
   it('shows another failure and does not retry forever on a rejected chart', async () => {
     save.mockRejectedValueOnce(new HttpErrorResponse({ status: 400 }));
     draw(0);
