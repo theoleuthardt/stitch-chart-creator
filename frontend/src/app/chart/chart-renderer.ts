@@ -1,4 +1,5 @@
 import { Pattern } from '../domain/pattern';
+import { Progress } from '../domain/progress';
 import { contrastColor, StitchDrawing, symbolFor } from '../domain/symbols';
 import { CellRange, cellHeight, Viewport, visibleRange } from '../domain/viewport';
 
@@ -22,6 +23,8 @@ export type ChartCanvasContext = Pick<
   | 'rect'
   | 'clip'
   | 'arc'
+  | 'strokeRect'
+  | 'globalAlpha'
 >;
 
 /** The colours around the user's chart colours. */
@@ -256,6 +259,46 @@ function drawGutters(
       ctx.fillText(String(row), GUTTER / 2, y);
     }
   }
+}
+
+/** How strongly finished stitches are veiled: they stay readable, but step back. */
+const DONE_VEIL = 0.65;
+
+/** Veils what is finished and outlines the current row. Only visible cells are touched. */
+export function drawProgress(
+  ctx: ChartCanvasContext,
+  pattern: Pattern,
+  viewport: Viewport,
+  size: { width: number; height: number },
+  progress: Progress,
+  theme: ChartTheme,
+  accent: string,
+): void {
+  const { scale, offsetX, offsetY } = viewport;
+  const rowHeight = cellHeight(viewport);
+  const range = visibleRange(viewport, size.width, size.height, pattern.width, pattern.height);
+  const doneRows = new Set(progress.doneRows);
+  const rowWidth = pattern.width * scale;
+  ctx.save();
+  ctx.globalAlpha = DONE_VEIL;
+  ctx.fillStyle = theme.paper;
+  for (let y = range.fromY; y <= range.toY; y++) {
+    if (doneRows.has(y)) {
+      ctx.fillRect(offsetX, offsetY + y * rowHeight, rowWidth, rowHeight);
+    }
+  }
+  for (const index of progress.doneCells) {
+    const x = index % pattern.width;
+    const y = Math.floor(index / pattern.width);
+    const visible = x >= range.fromX && x <= range.toX && y >= range.fromY && y <= range.toY;
+    if (visible && !doneRows.has(y)) {
+      ctx.fillRect(offsetX + x * scale, offsetY + y * rowHeight, scale, rowHeight);
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(offsetX, offsetY + progress.currentRow * rowHeight, rowWidth, rowHeight);
 }
 
 /** What has to be redrawn between two states: cells, everything, or nothing at all. */

@@ -10,7 +10,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
 import { PatternApi, StoredPattern } from '../../api/pattern-api';
 import {
@@ -43,7 +43,15 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
 /** The editor screen around the chart. */
 @Component({
   selector: 'scc-editor',
-  imports: [ChartCanvas, ChartSettings, CheckPanel, ExportPanel, PalettePanel, SymbolPanel],
+  imports: [
+    RouterLink,
+    ChartCanvas,
+    ChartSettings,
+    CheckPanel,
+    ExportPanel,
+    PalettePanel,
+    SymbolPanel,
+  ],
   providers: [EditorStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -99,6 +107,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
           <button class="button" type="button" (click)="canvas().zoom(1.25)">Zoom in</button>
           <button class="button" type="button" (click)="canvas().zoom(0.8)">Zoom out</button>
           <button class="button" type="button" (click)="canvas().fit()">Fit</button>
+          <a class="button" [routerLink]="['/charts', id, 'work']">Work mode</a>
           <span class="status" role="status">{{ statusText() }}</span>
         </div>
         @if (status() === 'conflict') {
@@ -177,6 +186,10 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
       background: var(--color-surface);
     }
 
+    a.button {
+      text-decoration: none;
+    }
+
     .status {
       margin-left: auto;
       align-self: center;
@@ -187,6 +200,15 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
     @media (width < 48rem) {
       .workspace {
         flex-direction: column;
+      }
+
+      .toolbar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+      }
+
+      .toolbar > * {
+        flex: none;
       }
 
       aside {
@@ -233,7 +255,7 @@ export class Editor {
   readonly statusText = computed(() => STATUS_TEXT[this.status()]);
 
   private readonly api = inject(PatternApi);
-  private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
   private readonly autosave = signal<Autosave | null>(null);
 
   constructor() {

@@ -12,8 +12,15 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { changedRegion, ChartTheme, drawChart, GUTTER } from '../../chart/chart-renderer';
+import {
+  changedRegion,
+  ChartTheme,
+  drawChart,
+  drawProgress,
+  GUTTER,
+} from '../../chart/chart-renderer';
 import { Pattern } from '../../domain/pattern';
+import { Progress } from '../../domain/progress';
 import { cellAspect } from '../../domain/symbols';
 import {
   CellRange,
@@ -74,6 +81,7 @@ const WHEEL_ZOOM = 1.0015;
 })
 export class ChartCanvas {
   readonly pattern = input.required<Pattern>();
+  readonly progress = input<Progress | null>(null);
   readonly strokeStart = output<[number, number]>();
   readonly strokeMove = output<[number, number]>();
   readonly strokeEnd = output();
@@ -113,6 +121,7 @@ export class ChartCanvas {
 
     effect(() => {
       this.viewport();
+      this.progress();
       this.queueFullRedraw();
     });
     effect(() => this.draw(this.pattern()));
@@ -279,6 +288,18 @@ export class ChartCanvas {
     this.drawn = pattern;
     if (this.marked) {
       this.drawMark(this.context, this.marked);
+    }
+    const progress = this.progress();
+    if (progress) {
+      drawProgress(
+        this.context,
+        pattern,
+        this.viewport(),
+        this.size,
+        progress,
+        this.theme,
+        this.accent,
+      );
     }
   }
 

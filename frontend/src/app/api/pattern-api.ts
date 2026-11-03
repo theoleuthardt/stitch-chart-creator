@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { renderThumbnail } from '../chart/thumbnail';
 import { CraftType, Pattern } from '../domain/pattern';
+import { Progress } from '../domain/progress';
 
 /** A chart as the backend stores it. */
 export interface StoredPattern extends Pattern {
@@ -86,6 +87,14 @@ export class PatternApi {
 
   save(id: string, pattern: Pattern, version: number): Promise<StoredPattern> {
     return firstValueFrom(this.http.put<StoredPattern>(path(id), body(pattern, version)));
+  }
+
+  getProgress(id: string): Promise<Progress> {
+    return firstValueFrom(this.http.get<Progress>(`${path(id)}/progress`));
+  }
+
+  async saveProgress(id: string, progress: Progress): Promise<void> {
+    await firstValueFrom(this.http.put(`${path(id)}/progress`, progress));
   }
 
   async remove(id: string): Promise<void> {

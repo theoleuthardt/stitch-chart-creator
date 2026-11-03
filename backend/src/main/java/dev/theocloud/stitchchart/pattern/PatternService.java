@@ -1,6 +1,7 @@
 package dev.theocloud.stitchchart.pattern;
 
 import dev.theocloud.stitchchart.stitch.EmbeddedStitch;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -17,9 +18,11 @@ import org.springframework.web.server.ResponseStatusException;
 class PatternService {
 
   private final PatternRepository patterns;
+  private final ProgressRepository progress;
 
-  PatternService(PatternRepository patterns) {
+  PatternService(PatternRepository patterns, ProgressRepository progress) {
     this.patterns = patterns;
+    this.progress = progress;
   }
 
   @Transactional(readOnly = true)
@@ -72,6 +75,45 @@ class PatternService {
     return patterns
         .findByIdAndOwnerId(id, ownerId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+  }
+
+  /** The progress of a chart, leaving out whatever a later resize took off the chart. */
+  @Transactional(readOnly = true)
+  PatternResponses.Progress getProgress(UUID ownerId, UUID id) {
+    ChartPattern pattern = find(ownerId, id);
+    return progress
+        .findById(id)
+        .map(stored ->
+            new PatternResponses.Progress(
+                Arrays.stream(stored.getDoneRows())
+                    .filter(row -> row < pattern.getHeight())
+                    .toArray(),
+                Arrays.stream(stored.getDoneCells())
+                    .filter(cell -> cell < pattern.getCells().length)
+                    .toArray(),
+                stored.getCurrentRow() < pattern.getHeight() ? stored.getCurrentRow() : 0))
+        .orElse(PatternResponses.Progress.NONE);
+  }
+
+  @Transactional
+  void saveProgress(UUID ownerId, UUID id, ProgressRequest request) {
+    ChartPattern pattern = find(ownerId, id);
+    boolean valid =
+        request.currentRow() >= 0
+            && request.currentRow() < pattern.getHeight()
+            && Arrays.stream(request.doneRows()).allMatch(row -> inRange(row, pattern.getHeight()))
+            && Arrays.stream(request.doneCells())
+                .allMatch(cell -> inRange(cell, pattern.getCells().length));
+    if (!valid) {
+      throw invalid("progress must stay inside the chart");
+    }
+    PatternProgress stored = progress.findById(id).orElseGet(() -> new PatternProgress(id));
+    stored.apply(request);
+    progress.save(stored);
+  }
+
+  private static boolean inRange(int value, int size) {
+    return value >= 0 && value < size;
   }
 
   /** The checks across fields that bean validation on the request cannot express. */

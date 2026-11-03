@@ -1,6 +1,13 @@
 import { createPattern, Pattern } from '../domain/pattern';
 import { SYMBOLS } from '../domain/symbols';
-import { changedRegion, ChartCanvasContext, ChartTheme, drawChart, GUTTER } from './chart-renderer';
+import {
+  changedRegion,
+  ChartCanvasContext,
+  ChartTheme,
+  drawChart,
+  drawProgress,
+  GUTTER,
+} from './chart-renderer';
 
 const theme: ChartTheme = {
   paper: 'white',
@@ -20,6 +27,8 @@ class Recorder implements ChartCanvasContext {
   fills: { style: string; x: number; y: number; w: number; h: number }[] = [];
   lines: { style: string; width: number; segments: number }[] = [];
   texts: string[] = [];
+  globalAlpha = 1;
+  outlined: { style: string; x: number; y: number; w: number; h: number }[] = [];
   clipped = false;
   clipRect: { x: number; y: number; w: number; h: number } | null = null;
   private segments = 0;
@@ -56,6 +65,9 @@ class Recorder implements ChartCanvasContext {
   }
   arc() {
     return undefined;
+  }
+  strokeRect(x: number, y: number, w: number, h: number) {
+    this.outlined.push({ style: this.strokeStyle, x, y, w, h });
   }
 }
 
@@ -228,6 +240,60 @@ describe('drawChart', () => {
     drawChart(ctx, { ...chart([9], 1) }, view, size, theme);
 
     expect(colored(ctx)).toEqual([]);
+  });
+});
+
+describe('drawProgress', () => {
+  const size = { width: 400, height: 400 };
+  const view = { scale: 10, offsetX: 0, offsetY: 0 };
+  const pattern = chart([1, 1, 1, 1], 2);
+
+  it('veils finished stitches', () => {
+    const ctx = new Recorder();
+
+    drawProgress(
+      ctx,
+      pattern,
+      view,
+      size,
+      { doneRows: [], doneCells: [1], currentRow: 0 },
+      theme,
+      'red',
+    );
+
+    expect(ctx.fills).toEqual([{ style: 'white', x: 10, y: 0, w: 10, h: 10 }]);
+  });
+
+  it('veils whole finished rows', () => {
+    const ctx = new Recorder();
+
+    drawProgress(
+      ctx,
+      pattern,
+      view,
+      size,
+      { doneRows: [1], doneCells: [], currentRow: 0 },
+      theme,
+      'red',
+    );
+
+    expect(ctx.fills).toEqual([{ style: 'white', x: 0, y: 10, w: 20, h: 10 }]);
+  });
+
+  it('outlines the current row', () => {
+    const ctx = new Recorder();
+
+    drawProgress(
+      ctx,
+      pattern,
+      view,
+      size,
+      { doneRows: [], doneCells: [], currentRow: 1 },
+      theme,
+      'red',
+    );
+
+    expect(ctx.outlined).toEqual([{ style: 'red', x: 0, y: 10, w: 20, h: 10 }]);
   });
 });
 

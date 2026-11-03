@@ -59,6 +59,21 @@ class PatternController {
     return patternService.update(principal.id(), id, body);
   }
 
+  @GetMapping("/{id}/progress")
+  PatternResponses.Progress getProgress(
+      @AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {
+    return patternService.getProgress(principal.id(), id);
+  }
+
+  @PutMapping("/{id}/progress")
+  PatternResponses.Progress saveProgress(
+      @AuthenticationPrincipal AccountPrincipal principal,
+      @PathVariable UUID id,
+      @Valid @RequestBody ProgressRequest body) {
+    patternService.saveProgress(principal.id(), id, body);
+    return new PatternResponses.Progress(body.doneRows(), body.doneCells(), body.currentRow());
+  }
+
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void delete(@AuthenticationPrincipal AccountPrincipal principal, @PathVariable UUID id) {

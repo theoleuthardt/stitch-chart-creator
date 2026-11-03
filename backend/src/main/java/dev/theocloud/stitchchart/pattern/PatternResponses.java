@@ -53,5 +53,10 @@ final class PatternResponses {
       String thumbnail,
       Instant updatedAt) {}
 
+  record Progress(int[] doneRows, int[] doneCells, int currentRow) {
+
+    static final Progress NONE = new Progress(new int[0], new int[0], 0);
+  }
+
   record Page(List<Summary> items, long total, int page, int size) {}
 }

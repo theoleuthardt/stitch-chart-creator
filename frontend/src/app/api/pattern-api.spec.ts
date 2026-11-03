@@ -110,6 +110,26 @@ describe('PatternApi', () => {
     await loaded;
   });
 
+  it('loads the progress of a chart', async () => {
+    const progress = { doneRows: [1], doneCells: [], currentRow: 2 };
+
+    const loaded = api.getProgress('a');
+    http.expectOne('/api/patterns/a/progress').flush(progress);
+
+    expect(await loaded).toEqual(progress);
+  });
+
+  it('saves the progress of a chart', async () => {
+    const progress = { doneRows: [1], doneCells: [], currentRow: 2 };
+
+    const saved = api.saveProgress('a', progress);
+    const request = http.expectOne('/api/patterns/a/progress');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(progress);
+    request.flush(progress);
+    await saved;
+  });
+
   it('deletes a pattern', async () => {
     const deleted = api.remove('a');
     const request = http.expectOne('/api/patterns/a');

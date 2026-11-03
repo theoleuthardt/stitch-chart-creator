@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { PatternApi } from '../../api/pattern-api';
 import { StitchApi } from '../../api/stitch-api';
 import { createPattern, setCell } from '../../domain/pattern';
@@ -19,6 +19,7 @@ describe('Editor', () => {
     TestBed.configureTestingModule({
       imports: [Editor],
       providers: [
+        provideRouter([]),
         { provide: PatternApi, useValue: api },
         { provide: StitchApi, useValue: { list: () => Promise.resolve([]) } },
         {
