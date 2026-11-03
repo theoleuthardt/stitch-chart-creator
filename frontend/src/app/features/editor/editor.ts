@@ -146,6 +146,30 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
       font-size: 0.875rem;
     }
 
+    @media (width < 48rem) {
+
+      .workspace {
+
+        flex-direction: column;
+
+      }
+
+
+      aside {
+
+        width: 100%;
+
+        max-height: 40%;
+
+        border-top: 1px solid var(--color-border);
+
+        border-left: 0;
+
+      }
+
+    }
+
+
     .conflict {
       display: flex;
       flex-wrap: wrap;
@@ -233,7 +257,7 @@ export class Editor {
   @HostListener('document:keydown', ['$event'])
   keyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) {
       return;
     }
     const shortcut = shortcutFor(event);
