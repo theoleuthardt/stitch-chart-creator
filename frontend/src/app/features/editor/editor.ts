@@ -110,7 +110,7 @@ export class Editor {
   @HostListener('document:keydown', ['$event'])
   keyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) {
       return;
     }
     const shortcut = shortcutFor(event);
