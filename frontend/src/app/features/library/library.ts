@@ -8,6 +8,9 @@ import { createPattern, Pattern } from '../../domain/pattern';
 /** A side of a chart is a positive whole number. */
 const sizeValidators = [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)];
 
+/** What fits into one request of the backend, whose body holds about two bytes per stitch. */
+const MAX_NEW_CELLS = 16_000_000;
+
 /** The start screen: the user's charts and a form for a new one. */
 @Component({
   selector: 'scc-library',
@@ -156,6 +159,7 @@ export class Library implements OnInit {
   private readonly api = inject(PatternApi);
   private readonly router = inject(Router);
   private page = 0;
+  private loadingMore = false;
 
   readonly newChart = inject(NonNullableFormBuilder).group({
     title: ['Untitled', [Validators.required, Validators.maxLength(200)]],
@@ -178,12 +182,18 @@ export class Library implements OnInit {
     });
   }
 
-  more(): Promise<void> {
-    return this.attempt(async () => {
+  /** Loads the next page. A failure leaves the position alone, so the same page comes next. */
+  async more(): Promise<void> {
+    if (this.loadingMore) {
+      return;
+    }
+    this.loadingMore = true;
+    await this.attempt(async () => {
+      const next = await this.api.list(this.page + 1);
       this.page++;
-      const next = await this.api.list(this.page);
       this.charts.update((charts) => [...charts, ...next.items]);
     });
+    this.loadingMore = false;
   }
 
   create(): Promise<void> {
@@ -191,6 +201,10 @@ export class Library implements OnInit {
       return Promise.resolve();
     }
     const { title, width, height } = this.newChart.getRawValue();
+    if (width * height > MAX_NEW_CELLS) {
+      this.error.set(`This chart is too large. It can have up to ${MAX_NEW_CELLS} stitches.`);
+      return Promise.resolve();
+    }
     return this.attempt(async () => {
       const created = await this.api.create(createPattern(width, height, 'crossStitch', title));
       await this.router.navigateByUrl(`/charts/${created.id}`);
