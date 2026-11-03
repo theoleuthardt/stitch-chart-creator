@@ -60,6 +60,14 @@ describe('drawExport', () => {
     expect(ctx.texts).toEqual(['k   Knit   1 stitches', 'p   Purl   1 stitches']);
   });
 
+  it('draws symbols however small the stitches are', () => {
+    const ctx = new Recorder();
+
+    drawExport(ctx as unknown as ChartCanvasContext, knitted, { ...options, cellSize: 3 });
+
+    expect(ctx.strokes).toBeGreaterThan(0);
+  });
+
   it('draws the chart on white paper', () => {
     const ctx = draw({});
 

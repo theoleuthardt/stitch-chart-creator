@@ -84,6 +84,19 @@ describe('renderSvg', () => {
     expect(document.querySelectorAll('g.symbols circle')).toHaveLength(1);
   });
 
+  it('draws symbols light on dark stitches', () => {
+    const knitted = {
+      ...createPattern(2, 1, 'knitting'),
+      palette: ['#000000'],
+      cells: [1, 0],
+      symbols: [1, 1],
+    };
+
+    const lines = [...parse(renderSvg(knitted, options)).querySelectorAll('g.symbols line')];
+
+    expect(lines.map((line) => line.getAttribute('stroke'))).toEqual(['#ffffff', '#000000']);
+  });
+
   it('uses the height of a knitted stitch', () => {
     const knitted = { ...createPattern(2, 2, 'knitting'), cells: [1, 1, 1, 1] };
 

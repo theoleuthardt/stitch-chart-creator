@@ -57,6 +57,30 @@ describe('CheckPanel', () => {
     expect(chosen).toEqual([{ x: 2, y: 0 }]);
   });
 
+  it('jumps to a whole row', () => {
+    TestBed.configureTestingModule({ imports: [CheckPanel], providers: [EditorStore] });
+    const panel = TestBed.createComponent(CheckPanel).componentInstance;
+    const chosen: unknown[] = [];
+    panel.jump.subscribe((place) => chosen.push(place));
+
+    panel.select({ kind: 'unevenRow', y: 3, count: 1, expected: 2 });
+
+    expect(chosen).toEqual([{ y: 3 }]);
+  });
+
+  it('forgets its findings when the chart changes', async () => {
+    const { fixture, panel, element } = setup([1, 1, 2, 1, 1, 1], 3);
+    panel.run();
+    await fixture.whenStable();
+
+    const store = TestBed.inject(EditorStore);
+    store.apply({ ...store.pattern(), title: 'Changed' });
+    await fixture.whenStable();
+
+    expect(panel.findings()).toBeNull();
+    expect(element.querySelectorAll('li')).toHaveLength(0);
+  });
+
   it('caps a very long list and says how many were left out', async () => {
     const cells = new Array<number>(1000).fill(0).map((_, index) => (index % 2 ? 1 : 2));
     const { fixture, panel, element } = setup(cells, 1000);

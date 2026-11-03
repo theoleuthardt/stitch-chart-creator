@@ -7,6 +7,7 @@ import {
   StitchDrawing,
   symbolById,
   symbolFor,
+  symbolInk,
   SYMBOLS,
   symbolsFor,
   usedSymbols,
@@ -148,6 +149,26 @@ describe('usedSymbols', () => {
 
   it('skips ids it does not know', () => {
     expect(usedSymbols({ ...createPattern(1, 1), symbols: [9999] })).toEqual([]);
+  });
+});
+
+describe('symbolInk', () => {
+  const pattern: Pattern = {
+    ...createPattern(3, 1, 'knitting'),
+    palette: ['#000000', '#ffffff'],
+    cells: [1, 2, 0],
+  };
+
+  it('is light on a dark stitch', () => {
+    expect(symbolInk(pattern, 0)).toBe('#ffffff');
+  });
+
+  it('is dark on a light stitch', () => {
+    expect(symbolInk(pattern, 1)).toBe('#000000');
+  });
+
+  it('is dark on an empty cell', () => {
+    expect(symbolInk(pattern, 2)).toBe('#000000');
   });
 });
 

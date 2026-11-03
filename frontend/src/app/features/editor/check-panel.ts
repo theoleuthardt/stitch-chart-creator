@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { checkPattern, Finding, findingText } from '../../domain/checks';
+import { Pattern } from '../../domain/pattern';
 import { EditorStore } from './editor-store';
 
 /** The most findings shown at once. */
@@ -89,11 +90,18 @@ export class CheckPanel {
   private readonly store = inject(EditorStore);
 
   readonly jump = output<ChartPlace>();
-  readonly findings = signal<Finding[] | null>(null);
+  private readonly checked = signal<{ pattern: Pattern; findings: Finding[] } | null>(null);
+
+  /** The findings of the current chart. After a change they are gone until the next check. */
+  readonly findings = computed(() => {
+    const checked = this.checked();
+    return checked?.pattern === this.store.pattern() ? checked.findings : null;
+  });
   readonly shown = computed(() => (this.findings() ?? []).slice(0, MAX_SHOWN));
 
   run(): void {
-    this.findings.set(checkPattern(this.store.pattern()));
+    const pattern = this.store.pattern();
+    this.checked.set({ pattern, findings: checkPattern(pattern) });
   }
 
   text(finding: Finding): string {

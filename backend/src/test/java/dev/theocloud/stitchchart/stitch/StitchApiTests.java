@@ -194,5 +194,7 @@ class StitchApiTests {
         .andExpect(status().isBadRequest());
     send(post("/api/patterns"), session, CHART.replace("\"id\":1000", "\"id\":5"))
         .andExpect(status().isBadRequest());
+    send(post("/api/patterns"), session, CHART.replace("[[0,0,1,1]]", "[]"))
+        .andExpect(status().isBadRequest());
   }
 }

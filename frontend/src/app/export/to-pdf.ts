@@ -1,6 +1,6 @@
 import type { jsPDF } from 'jspdf';
 import { Pattern } from '../domain/pattern';
-import { StitchDrawing, symbolFor, usedSymbols } from '../domain/symbols';
+import { StitchDrawing, symbolFor, symbolInk, usedSymbols } from '../domain/symbols';
 import { CellRange } from '../domain/viewport';
 import { usedColors } from './image-layout';
 import { PdfLayout, pdfLayout, PdfOptions } from './pdf-layout';
@@ -100,12 +100,13 @@ function drawSymbols(doc: jsPDF, pattern: Pattern, page: CellRange, layout: PdfL
     return;
   }
   const { originX, originY, cellSize, cellHeight } = layout;
-  doc.setDrawColor(0);
   doc.setLineWidth(0.6);
   for (let y = page.fromY; y <= page.toY; y++) {
     for (let x = page.fromX; x <= page.toX; x++) {
-      const symbol = symbolFor(pattern, symbols[y * pattern.width + x] ?? 0);
+      const index = y * pattern.width + x;
+      const symbol = symbolFor(pattern, symbols[index] ?? 0);
       if (symbol) {
+        doc.setDrawColor(symbolInk(pattern, index));
         drawSymbol(
           doc,
           symbol,

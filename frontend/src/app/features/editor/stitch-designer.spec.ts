@@ -45,6 +45,16 @@ describe('StitchDesigner', () => {
     expect(designer.lines()).toEqual([]);
   });
 
+  it('ignores a circle that cannot fit at the edge', () => {
+    const designer = setup();
+    designer.mode.set('circle');
+
+    designer.place(0, 0);
+    designer.place(0.5, 0.5);
+
+    expect(designer.circles()).toEqual([]);
+  });
+
   it('takes the last shape back', () => {
     const designer = setup();
     designer.place(0, 0);

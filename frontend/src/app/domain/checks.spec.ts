@@ -119,6 +119,14 @@ describe('uneven rows', () => {
   });
 });
 
+describe('the order of the findings', () => {
+  it('puts what affects the whole chart in front of single stitches', () => {
+    const pattern = chart(3, [2, 1, 2], ['#ff0000', '#0000ff', '#00ff00']);
+
+    expect(checkPattern(pattern)[0]?.kind).toBe('unusedColor');
+  });
+});
+
 describe('a clean chart', () => {
   it('has no findings', () => {
     expect(checkPattern(chart(2, [1, 1, 2, 2]))).toEqual([]);

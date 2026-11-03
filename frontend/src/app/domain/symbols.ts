@@ -204,7 +204,7 @@ export function symbolFor(pattern: Pattern, id: number): StitchSymbol | undefine
 }
 
 export function isStitchAbbreviation(value: string): boolean {
-  return /^[\p{L}\p{N} ._+/-]{1,12}$/u.test(value);
+  return value.trim().length > 0 && /^[\p{L}\p{N} ._+/-]{1,12}$/u.test(value);
 }
 
 /** Adds a copy of a stitch to a chart, unless the chart already has the same one. */
@@ -258,6 +258,12 @@ export function usedSymbols(pattern: Pattern): { symbol: StitchSymbol; count: nu
       symbol,
       count: counts.get(symbol.id) ?? 0,
     }));
+}
+
+/** The ink of the symbol in a cell: black on empty cells, whatever reads best on stitches. */
+export function symbolInk(pattern: Pattern, index: number): string {
+  const color = pattern.palette[(pattern.cells[index] ?? 0) - 1];
+  return color ? contrastColor(color) : '#000000';
 }
 
 /** Black or white, whichever reads better on a colour. */

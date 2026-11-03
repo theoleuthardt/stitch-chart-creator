@@ -36,7 +36,7 @@ export function drawExport(
   };
   const range = { fromX: 0, toX: pattern.width - 1, fromY: 0, toY: pattern.height - 1 };
   drawCells(ctx, pattern, viewport, range);
-  drawSymbols(ctx, pattern, viewport, range);
+  drawSymbols(ctx, pattern, viewport, range, 0);
   if (options.gridLines) {
     drawGrid(ctx, viewport, range, GRID_MINOR, GRID_MAJOR);
   }

@@ -110,6 +110,7 @@ export class ImageConverter {
         reject(new Error('The image could not be converted.'));
       }
       this.running.clear();
+      this.worker = null;
     };
     return worker;
   }

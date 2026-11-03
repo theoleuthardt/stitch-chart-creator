@@ -44,6 +44,17 @@ describe('excelSheets', () => {
     expect(excelSheets(knitted)[0]?.data[0]?.[1]).toBeNull();
   });
 
+  it('keeps the abbreviation readable on a dark cell', () => {
+    const knitted = {
+      ...createPattern(1, 1, 'knitting'),
+      palette: ['#000000'],
+      cells: [1],
+      symbols: [1],
+    };
+
+    expect(excelSheets(knitted)[0]?.data[0]?.[0]).toMatchObject({ textColor: '#ffffff' });
+  });
+
   it('lists the symbols in the legend', () => {
     const knitted = { ...createPattern(2, 1, 'knitting'), symbols: [1, 1] };
 

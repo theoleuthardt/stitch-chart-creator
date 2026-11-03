@@ -86,6 +86,75 @@ describe('ImageImport', () => {
     expect(importer.result()?.palette).toEqual(['#000000']);
   });
 
+  it('saves the size the cells were made for, not one changed since', async () => {
+    const { importer, api, converter } = await setup();
+    importer.width.set(2);
+    await importer.choose(file);
+    let finish: (value: { cells: number[]; palette: string[] }) => void = () => undefined;
+    converter.convert.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)));
+
+    const running = importer.update({ width: 4 });
+    expect(importer.canSave()).toBe(false);
+    await importer.save();
+    expect(api.create).not.toHaveBeenCalled();
+
+    finish({ cells: new Array<number>(12).fill(1), palette: ['#000000'] });
+    await running;
+    expect(importer.canSave()).toBe(true);
+  });
+
+  it('stays unsaveable after a failed conversion', async () => {
+    const { importer, converter } = await setup();
+    await importer.choose(file);
+    converter.convert.mockRejectedValueOnce(new Error('failed'));
+
+    await importer.update({ width: 80 });
+
+    expect(importer.canSave()).toBe(false);
+    expect(importer.error()).toBe('failed');
+  });
+
+  it('keeps the settings inside their limits', async () => {
+    const { importer } = await setup();
+    await importer.choose(file);
+
+    await importer.update({ width: 100_000 });
+    await importer.update({ colors: 5000 });
+    await importer.setCrop('left', 200);
+
+    expect(importer.width()).toBe(1000);
+    expect(importer.colors()).toBe(256);
+    expect(importer.crop().left).toBe(95);
+  });
+
+  it('refuses a very tall image that would give too many stitches', async () => {
+    const { importer, converter } = await setup();
+    converter.load.mockResolvedValueOnce({ bitmap: {}, width: 1, height: 100_000 } as LoadedImage);
+    importer.width.set(1000);
+    converter.convert.mockClear();
+
+    await importer.choose(file);
+
+    expect(converter.convert).not.toHaveBeenCalled();
+    expect(importer.error()).toContain('too large');
+  });
+
+  it('keeps the file that was chosen last', async () => {
+    const { importer, converter } = await setup();
+    let finishFirst: (value: LoadedImage) => void = () => undefined;
+    converter.load.mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)));
+    const second = { ...image, width: 400 };
+    converter.load.mockResolvedValueOnce(second);
+
+    const first = importer.choose(file);
+    await importer.choose(new File(['y'], 'Second.png', { type: 'image/png' }));
+    finishFirst(image);
+    await first;
+
+    expect(importer.image()).toBe(second);
+    expect(importer.title()).toBe('Second');
+  });
+
   it('explains why a file was refused', async () => {
     const { importer, converter } = await setup();
     converter.load.mockRejectedValueOnce(new Error('This file is too large.'));

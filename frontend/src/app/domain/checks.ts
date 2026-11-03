@@ -85,14 +85,17 @@ function unevenRows(pattern: Pattern): Finding[] {
   return findings;
 }
 
-/** Looks through a chart for likely mistakes. Which checks apply depends on the craft. */
+/**
+ * Looks through a chart for likely mistakes. Which checks apply depends on the craft. Findings
+ * about the whole chart come first, because single stitches can run into the thousands.
+ */
 export function checkPattern(pattern: Pattern): Finding[] {
   const colorChart = pattern.craftType === 'crossStitch' || pattern.craftType === 'pixelArt';
   return [
-    ...(colorChart ? isolatedStitches(pattern) : []),
-    ...unevenRows(pattern),
     ...unusedColors(pattern),
     ...similarColors(pattern),
+    ...unevenRows(pattern),
+    ...(colorChart ? isolatedStitches(pattern) : []),
   ];
 }
 

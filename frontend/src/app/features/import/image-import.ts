@@ -7,6 +7,24 @@ import { Crop, heightForWidth } from '../../domain/image-quantize';
 import { Pattern } from '../../domain/pattern';
 import { ConvertResult, ImageConverter, LoadedImage } from './image-converter';
 
+/** The widest chart an image can become. */
+const MAX_WIDTH = 1000;
+
+/** The most colours an image can keep. */
+const MAX_COLORS = 256;
+
+/** The most that can be cut off one edge, in percent. */
+const MAX_CROP = 95;
+
+/** What fits into one request of the backend, whose body holds about two bytes per stitch. */
+const MAX_CELLS = 16_000_000;
+
+/** A finished conversion together with the size its cells were made for. */
+interface Converted extends ConvertResult {
+  width: number;
+  height: number;
+}
+
 interface Settings {
   colors?: number;
   width?: number;
@@ -90,7 +108,8 @@ interface Settings {
 
       @if (preview(); as url) {
         <p class="muted">
-          {{ width() }} × {{ height() }} stitches, {{ result()?.palette?.length }} colours
+          {{ result()?.width }} × {{ result()?.height }} stitches,
+          {{ result()?.palette?.length }} colours
         </p>
         <img class="preview" [src]="url" alt="Preview of the chart" />
       }
@@ -157,6 +176,7 @@ export class ImageImport {
   private readonly api = inject(PatternApi);
   private readonly router = inject(Router);
   private conversion = 0;
+  private choice = 0;
 
   readonly edges = ['left', 'top', 'right', 'bottom'] as const;
   readonly title = signal('Imported image');
@@ -164,7 +184,8 @@ export class ImageImport {
   readonly colors = signal(16);
   readonly crop = signal<Crop>({ left: 0, top: 0, right: 0, bottom: 0 });
   readonly image = signal<LoadedImage | null>(null);
-  readonly result = signal<ConvertResult | null>(null);
+  readonly result = signal<Converted | null>(null);
+  readonly converting = signal(false);
   readonly error = signal<string | null>(null);
 
   readonly height = computed(() => {
@@ -183,8 +204,8 @@ export class ImageImport {
       ? {
           title: this.title().trim(),
           craftType: 'crossStitch',
-          width: this.width(),
-          height: this.height(),
+          width: result.width,
+          height: result.height,
           palette: result.palette,
           cells: result.cells,
         }
@@ -194,7 +215,9 @@ export class ImageImport {
     const chart = this.chart();
     return chart ? renderThumbnail(chart) : undefined;
   });
-  readonly canSave = computed(() => this.chart() !== null && this.title().trim().length > 0);
+  readonly canSave = computed(
+    () => this.chart() !== null && !this.converting() && this.title().trim().length > 0,
+  );
 
   fileChosen(input: HTMLInputElement): Promise<void> {
     const file = input.files?.[0];
@@ -202,25 +225,31 @@ export class ImageImport {
   }
 
   async choose(file: File): Promise<void> {
+    const choice = ++this.choice;
     this.error.set(null);
     this.result.set(null);
     this.image.set(null);
     try {
-      this.image.set(await this.converter.load(file));
-      this.title.set(file.name.replace(/\.[^.]+$/, ''));
-      await this.convert();
+      const image = await this.converter.load(file);
+      if (choice === this.choice) {
+        this.image.set(image);
+        this.title.set(file.name.replace(/\.[^.]+$/, ''));
+        await this.convert();
+      }
     } catch (error) {
-      this.error.set(error instanceof Error ? error.message : 'This file could not be read.');
+      if (choice === this.choice) {
+        this.error.set(error instanceof Error ? error.message : 'This file could not be read.');
+      }
     }
   }
 
   /** Takes over changed settings and converts again. */
   update({ colors, width, crop }: Settings): Promise<void> {
     if (colors !== undefined && Number.isInteger(colors) && colors > 0) {
-      this.colors.set(colors);
+      this.colors.set(Math.min(colors, MAX_COLORS));
     }
     if (width !== undefined && Number.isInteger(width) && width > 0) {
-      this.width.set(width);
+      this.width.set(Math.min(width, MAX_WIDTH));
     }
     if (crop) {
       this.crop.update((current) => ({ ...current, ...crop }));
@@ -229,12 +258,13 @@ export class ImageImport {
   }
 
   setCrop(edge: keyof Crop, percent: number): Promise<void> {
-    return this.update({ crop: { [edge]: Number.isFinite(percent) ? percent : 0 } });
+    const inside = Number.isFinite(percent) ? Math.min(MAX_CROP, Math.max(0, percent)) : 0;
+    return this.update({ crop: { [edge]: inside } });
   }
 
   async save(): Promise<void> {
     const chart = this.chart();
-    if (!chart) {
+    if (!chart || !this.canSave()) {
       return;
     }
     this.error.set(null);
@@ -252,20 +282,34 @@ export class ImageImport {
     if (!image) {
       return;
     }
+    const width = this.width();
+    const height = this.height();
     const run = ++this.conversion;
+    if (width * height > MAX_CELLS) {
+      this.result.set(null);
+      this.error.set('This chart would be too large. Choose a smaller width.');
+      return;
+    }
+    this.converting.set(true);
+    this.error.set(null);
     try {
       const result = await this.converter.convert(image, {
         crop: this.crop(),
-        width: this.width(),
-        height: this.height(),
+        width,
+        height,
         colors: this.colors(),
       });
       if (run === this.conversion) {
-        this.result.set(result);
+        this.result.set({ ...result, width, height });
       }
     } catch (error) {
       if (run === this.conversion) {
+        this.result.set(null);
         this.error.set(error instanceof Error ? error.message : 'The conversion failed.');
+      }
+    } finally {
+      if (run === this.conversion) {
+        this.converting.set(false);
       }
     }
   }

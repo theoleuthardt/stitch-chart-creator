@@ -145,7 +145,7 @@ export class ChartCanvas {
   /** Brings a place to the middle and marks it, or marks the whole row without `x`. */
   focus({ x, y }: { x?: number; y: number }): void {
     this.viewport.update((view) =>
-      centerOn(view, x ?? this.pattern().width / 2, y, this.size.width, this.size.height),
+      centerOn(view, x ?? (this.pattern().width - 1) / 2, y, this.size.width, this.size.height),
     );
     this.marked = { fromX: x ?? 0, toX: x ?? this.pattern().width - 1, fromY: y, toY: y };
   }
@@ -260,8 +260,10 @@ export class ChartCanvas {
 
   private draw(pattern: Pattern): void {
     const previous = this.drawn;
-    if (previous && previous !== pattern) {
+    if (previous && previous !== pattern && this.marked) {
       this.marked = null;
+      this.queueFullRedraw();
+      return;
     }
     const region = previous ? changedRegion(previous, pattern) : 'all';
     if (region === 'all') {

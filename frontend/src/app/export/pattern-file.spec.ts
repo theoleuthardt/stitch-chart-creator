@@ -166,6 +166,10 @@ describe('parsePatternFile', () => {
         [{ ...stitch, lines: 'M0 0' }],
         [{ ...stitch, circles: [[0.5, 0.5]] }],
         [{ ...stitch, lines: [], circles: [] }],
+        [{ ...stitch, abbreviation: '   ' }],
+        [{ ...stitch, lines: new Array(65).fill([0, 0, 1, 1]) }],
+        [{ ...stitch, circles: new Array(17).fill([0.5, 0.5, 0.1]) }],
+        new Array(257).fill(stitch),
       ];
 
       for (const customStitches of broken) {

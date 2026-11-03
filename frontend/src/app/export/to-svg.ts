@@ -1,5 +1,5 @@
 import { Pattern } from '../domain/pattern';
-import { StitchDrawing, symbolFor, usedSymbols } from '../domain/symbols';
+import { StitchDrawing, symbolFor, symbolInk, usedSymbols } from '../domain/symbols';
 import { exportLayout, ExportLayout, ExportOptions, LEGEND_ROW, usedColors } from './image-layout';
 
 const GRID_MINOR = '#b8b8b8';
@@ -66,14 +66,15 @@ function symbolShapes(
   y: number,
   width: number,
   height: number,
+  ink: string,
 ): string {
   const lines = symbol.lines.map(
     ([x1, y1, x2, y2]) =>
-      `<line x1="${x + x1 * width}" y1="${y + y1 * height}" x2="${x + x2 * width}" y2="${y + y2 * height}"/>`,
+      `<line x1="${x + x1 * width}" y1="${y + y1 * height}" x2="${x + x2 * width}" y2="${y + y2 * height}" stroke="${ink}"/>`,
   );
   const circles = symbol.circles.map(
     ([cx, cy, r]) =>
-      `<circle cx="${x + cx * width}" cy="${y + cy * height}" r="${r * Math.min(width, height)}"/>`,
+      `<circle cx="${x + cx * width}" cy="${y + cy * height}" r="${r * Math.min(width, height)}" stroke="${ink}"/>`,
   );
   return [...lines, ...circles].join('');
 }
@@ -84,14 +85,15 @@ function symbols(pattern: Pattern, options: ExportOptions, layout: ExportLayout)
   }
   const { cellSize } = options;
   const parts: string[] = [
-    `<g class="symbols" fill="none" stroke="#000000" stroke-width="${Math.max(1, cellSize / 12)}">`,
+    `<g class="symbols" fill="none" stroke-width="${Math.max(1, cellSize / 12)}">`,
   ];
   pattern.symbols.forEach((id, index) => {
     const symbol = symbolFor(pattern, id);
     if (symbol) {
       const x = layout.chartX + (index % pattern.width) * cellSize;
       const y = layout.chartY + Math.floor(index / pattern.width) * layout.cellHeight;
-      parts.push(symbolShapes(symbol, x, y, cellSize, layout.cellHeight));
+      const ink = symbolInk(pattern, index);
+      parts.push(symbolShapes(symbol, x, y, cellSize, layout.cellHeight, ink));
     }
   });
   parts.push('</g>');
@@ -139,7 +141,7 @@ function legend(pattern: Pattern, layout: ExportLayout): string {
   const symbolRows = usedSymbols(pattern).map(({ symbol, count }, index) => {
     const y = layout.legendY + 12 + (colors.length + index) * LEGEND_ROW;
     return (
-      `<g fill="none" stroke="#000000" stroke-width="1.5">${symbolShapes(symbol, 12, y + 2, 24, 20)}</g>` +
+      `<g fill="none" stroke-width="1.5">${symbolShapes(symbol, 12, y + 2, 24, 20, '#000000')}</g>` +
       `<text x="48" y="${y + 12}" dominant-baseline="middle">${escapeXml(symbol.abbreviation)}   ${escapeXml(symbol.name)}   ${count} stitches</text>`
     );
   });

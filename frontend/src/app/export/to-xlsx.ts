@@ -1,6 +1,6 @@
 import type { Cell, Sheet } from 'write-excel-file/browser';
 import { Pattern } from '../domain/pattern';
-import { cellAspect, symbolFor, usedSymbols } from '../domain/symbols';
+import { cellAspect, symbolFor, symbolInk, usedSymbols } from '../domain/symbols';
 import { usedColors } from './image-layout';
 
 /** The columns of a worksheet. */
@@ -35,6 +35,7 @@ export function excelSheets(pattern: Pattern): Sheet<Blob>[] {
           ? {
               value: symbol?.abbreviation ?? '',
               height,
+              textColor: symbolInk(pattern, index),
               ...(color ? { backgroundColor: color } : {}),
             }
           : null,

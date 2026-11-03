@@ -1,6 +1,6 @@
 import { Pattern } from '../domain/pattern';
 import { Progress } from '../domain/progress';
-import { contrastColor, StitchDrawing, symbolFor } from '../domain/symbols';
+import { StitchDrawing, symbolFor, symbolInk } from '../domain/symbols';
 import { CellRange, cellHeight, Viewport, visibleRange } from '../domain/viewport';
 
 /** The part of a 2D canvas context the renderer uses. */
@@ -163,16 +163,20 @@ export function traceSymbol(
   }
 }
 
-/** Draws the symbols of a range, dark on light cells and light on dark ones. */
+/**
+ * Draws the symbols of a range, dark on light cells and light on dark ones. Below `minScale` they
+ * are left out; an export asks for them at any size.
+ */
 export function drawSymbols(
   ctx: ChartCanvasContext,
   pattern: Pattern,
   viewport: Viewport,
   range: CellRange,
+  minScale = MIN_SYMBOL_SCALE,
 ): void {
   const { symbols } = pattern;
   const { scale, offsetX, offsetY } = viewport;
-  if (!symbols || scale < MIN_SYMBOL_SCALE) {
+  if (!symbols || scale < minScale) {
     return;
   }
   const rowHeight = cellHeight(viewport);
@@ -182,8 +186,7 @@ export function drawSymbols(
       for (let x = range.fromX; x <= range.toX; x++) {
         const index = y * pattern.width + x;
         const symbol = symbolFor(pattern, symbols[index] ?? 0);
-        const color = pattern.palette[(pattern.cells[index] ?? 0) - 1];
-        if (symbol && (color ? contrastColor(color) : '#000000') === ink) {
+        if (symbol && symbolInk(pattern, index) === ink) {
           traceSymbol(ctx, symbol, offsetX + x * scale, offsetY + y * rowHeight, scale, rowHeight);
         }
       }

@@ -80,6 +80,19 @@ describe('ImageConverter', () => {
     expect((await second).palette).toEqual(['#000004']);
   });
 
+  it('starts a new worker after one broke', async () => {
+    const running = converter.convert(image, { ...options, colors: 16 });
+    const broken = FakeWorker.latest;
+    broken.onerror?.(new ErrorEvent('error'));
+    await expect(running).rejects.toThrow();
+
+    const next = converter.convert(image, { ...options, colors: 8 });
+    FakeWorker.latest.answer(0, ['#000000']);
+
+    expect(FakeWorker.latest).not.toBe(broken);
+    expect((await next).palette).toEqual(['#000000']);
+  });
+
   it('fails all running conversions when the worker breaks', async () => {
     const running = converter.convert(image, { ...options, colors: 16 });
 

@@ -179,8 +179,10 @@ export class StitchDesigner {
     } else {
       const radius = Math.hypot(point[0] - start[0], point[1] - start[1]);
       const fitting = Math.min(radius, start[0], start[1], 1 - start[0], 1 - start[1]);
-      this.circles.update((circles) => [...circles, [start[0], start[1], fitting]]);
-      this.order.push('circle');
+      if (fitting > 0) {
+        this.circles.update((circles) => [...circles, [start[0], start[1], fitting]]);
+        this.order.push('circle');
+      }
     }
   }
 

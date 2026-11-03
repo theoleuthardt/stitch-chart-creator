@@ -1,5 +1,6 @@
 package dev.theocloud.stitchchart.stitch;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -30,4 +31,10 @@ public record EmbeddedStitch(
 
   /** The first number that is free for custom stitches. */
   public static final int FIRST_ID = 1000;
+
+  /** A stitch without a drawing could not be told apart on a chart. */
+  @AssertTrue
+  public boolean isDrawn() {
+    return lines == null || circles == null || !lines.isEmpty() || !circles.isEmpty();
+  }
 }

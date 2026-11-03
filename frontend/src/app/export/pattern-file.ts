@@ -15,6 +15,11 @@ const GAUGE_UNITS: readonly Gauge['unit'][] = ['cm', 'cm10', 'in', 'in4'];
 /** The largest gauge the backend accepts. */
 const MAX_GAUGE = 1000;
 
+/** What the backend accepts for the custom stitches of a chart. */
+const MAX_STITCHES = 256;
+const MAX_STITCH_LINES = 64;
+const MAX_STITCH_CIRCLES = 16;
+
 /** The longest stitch name the backend accepts. */
 const MAX_STITCH_NAME = 60;
 
@@ -59,9 +64,10 @@ function isGauge(value: unknown): value is Gauge {
   );
 }
 
-function isShapeList(value: unknown, size: number): boolean {
+function isShapeList(value: unknown, size: number, limit: number): boolean {
   return (
     Array.isArray(value) &&
+    value.length <= limit &&
     value.every(
       (shape) =>
         Array.isArray(shape) &&
@@ -85,8 +91,8 @@ function isStitch(value: unknown): value is StitchSymbol {
     name.length <= MAX_STITCH_NAME &&
     typeof abbreviation === 'string' &&
     isStitchAbbreviation(abbreviation) &&
-    isShapeList(lines, 4) &&
-    isShapeList(circles, 3) &&
+    isShapeList(lines, 4, MAX_STITCH_LINES) &&
+    isShapeList(circles, 3, MAX_STITCH_CIRCLES) &&
     (lines as unknown[]).length + (circles as unknown[]).length > 0
   );
 }
@@ -151,7 +157,9 @@ export function parsePatternFile(text: string): ParseResult {
   }
   if (
     customStitches !== undefined &&
-    (!Array.isArray(customStitches) || !customStitches.every(isStitch))
+    (!Array.isArray(customStitches) ||
+      customStitches.length > MAX_STITCHES ||
+      !customStitches.every(isStitch))
   ) {
     return fail('The stitches of this chart are not valid.');
   }
