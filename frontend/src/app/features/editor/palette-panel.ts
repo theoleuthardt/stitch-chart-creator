@@ -1,5 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { addColor, changeColor, isHexColor, mergeColors, removeColor } from '../../domain/palette';
+import {
+  addColor,
+  changeColor,
+  isHexColor,
+  mergeColors,
+  numberAfterRemoval,
+  removeColor,
+} from '../../domain/palette';
 import { colorUsage } from '../../domain/pattern';
 import { EditorStore } from './editor-store';
 
@@ -210,6 +217,6 @@ export class PalettePanel {
   merge(into: number): void {
     const from = this.store.color();
     this.store.apply(mergeColors(this.store.pattern(), from, into));
-    this.store.setColor(into > from ? into - 1 : into);
+    this.store.setColor(numberAfterRemoval(into, from));
   }
 }

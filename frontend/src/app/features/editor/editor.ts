@@ -92,6 +92,19 @@ import { shortcutFor } from './shortcuts';
       min-width: 0;
     }
 
+    @media (width < 48rem) {
+      .workspace {
+        flex-direction: column;
+      }
+
+      scc-palette-panel {
+        width: 100%;
+        max-height: 40%;
+        border-top: 1px solid var(--color-border);
+        border-left: 0;
+      }
+    }
+
     scc-palette-panel {
       flex: none;
       width: 15rem;
