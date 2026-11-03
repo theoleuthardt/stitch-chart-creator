@@ -1,0 +1,28 @@
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+    index index.html;
+    client_max_body_size 33m;
+
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+    set $backend backend;
+
+    location /api/ {
+        include /etc/nginx/security-headers.conf;
+        proxy_pass http://$backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    }
+
+    location ~* "-[0-9A-Z]{8}\.(js|css)$" {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location / {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "no-cache";
+        try_files $uri /index.html;
+    }
+}

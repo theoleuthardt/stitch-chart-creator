@@ -73,6 +73,8 @@ interface Pattern {
   palette: string[]; // hex colours, cell value n refers to palette[n - 1]
   cells: number[]; // flat, length width * height, 0 = empty
   symbols?: number[]; // optional, knitting and crochet: symbol id per cell
+  customStitches?: StitchSymbol[]; // copies of the custom stitches in use, numbered from 1000
+  gauge?: Gauge; // optional, stitches and rows per unit
   version: number; // optimistic locking, a stale save answers 409
   createdAt: string;
   updatedAt: string;
@@ -127,6 +129,6 @@ All client-side on the flat array:
 
 ## Hosting
 
-Three containers under Podman Compose: a small web server that serves the static frontend and
-proxies `/api` to the backend, the backend, and Postgres. Only the web server is exposed, behind the
-existing reverse proxy on a `theocloud.dev` subdomain.
+Three containers from public images: a small web server that serves the static frontend and proxies
+`/api` to the backend, the backend, and Postgres. Only the web server is exposed, behind the existing
+reverse proxy on a `theocloud.dev` subdomain. See [`DEPLOYMENT.md`](DEPLOYMENT.md).

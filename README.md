@@ -25,6 +25,11 @@ task check          # lint, format check, tests and build
 - `backend/`: Spring Boot 4 on Java 25, Maven, Liquibase, Testcontainers
 - PostgreSQL 18
 
+## Running it
+
+The app is published as public container images. `compose.yml` and a `.env` are all a host needs, see
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
 ## Contributing
 
 The workflow and conventions are in [`CLAUDE.md`](CLAUDE.md).

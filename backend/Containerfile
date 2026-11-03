@@ -1,0 +1,14 @@
+FROM docker.io/library/eclipse-temurin:25-jdk AS build
+WORKDIR /app
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+RUN ./mvnw -B -q dependency:go-offline
+COPY src src
+RUN ./mvnw -B -q package -DskipTests
+
+FROM docker.io/library/eclipse-temurin:25-jre
+RUN useradd --system --uid 10001 --no-create-home stitch
+USER 10001
+COPY --from=build /app/target/*-SNAPSHOT.jar /app/app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

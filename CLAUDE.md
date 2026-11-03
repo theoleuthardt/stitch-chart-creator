@@ -19,7 +19,7 @@ Always use `task <name>` (`Taskfile.yml`), not `npm`/`ng`/`mvnw` directly, whene
 
 ```bash
 task install        # frontend dependencies, Maven fetches its own
-task db:up          # local Postgres through compose.yaml
+task db:up          # local Postgres through compose.dev.yml
 task backend:dev    # Spring Boot on :8080 with the dev profile
 task frontend:dev   # ng serve on :4200, /api goes to the backend
 task test           # frontend (Vitest) and backend (JUnit, real Postgres via Testcontainers)
@@ -74,6 +74,16 @@ Only real documentation comments: a TSDoc or Javadoc `/** */` on a class, interf
 module-level constant or at the top of a file. No narrative comments, no step-by-step comments, no `// note:` asides, in any
 language and in config files too. Reasoning goes in the enclosing doc comment or in `docs/`. Do not
 add `eslint-disable` or `@SuppressWarnings` to get past a lint.
+
+## Deployment
+
+`compose.yml` is the deployment: it runs the images published to ghcr.io and is the only file a host
+needs next to its `.env`. `compose.dev.yml` is the local Postgres. `.github/workflows/publish.yml`
+publishes both images from `main` and from `v*` tags. Details: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+The web server in the frontend image sets a strict CSP (`frontend/security-headers.conf`). Anything
+new that needs an inline script, another origin or a new kind of worker has to be checked against
+the running containers, because the dev server does not send these headers.
 
 ## Engineering standards
 

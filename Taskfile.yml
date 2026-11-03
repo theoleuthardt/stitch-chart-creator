@@ -52,12 +52,12 @@ tasks:
   db:up:
     desc: Start the local Postgres
     cmds:
-      - podman compose up -d db
+      - podman compose -f compose.dev.yml up -d db
 
   db:down:
     desc: Stop the local Postgres
     cmds:
-      - podman compose down
+      - podman compose -f compose.dev.yml down
 
   e2e:
     desc: Run the browser tests; needs task db:up and task backend:dev
