@@ -27,7 +27,7 @@ describe('Library', () => {
   const setup = async (items: PatternSummary[] = [summary]) => {
     const page: PatternPage = { items, total: items.length, page: 0, size: 50 };
     const api = {
-      list: vi.fn(() => Promise.resolve(page)),
+      list: vi.fn<(page: number) => Promise<PatternPage>>(() => Promise.resolve(page)),
       get: vi.fn(() => Promise.resolve(stored())),
       create: vi.fn(() => Promise.resolve({ ...stored(), id: 'new' })),
       save: vi.fn(() => Promise.resolve(stored())),
@@ -99,6 +99,42 @@ describe('Library', () => {
     await fixture.componentInstance.create();
 
     expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses a chart beyond what can be saved', async () => {
+    const { fixture, api } = await setup();
+    fixture.componentInstance.newChart.setValue({
+      title: 'Tulip',
+      craftType: 'crossStitch',
+      width: 5000,
+      height: 5000,
+    });
+
+    await fixture.componentInstance.create();
+
+    expect(api.create).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error()).toContain('too large');
+  });
+
+  it('asks for the same page again after a failed "show more"', async () => {
+    const { fixture, api } = await setup();
+    api.list.mockRejectedValueOnce(new Error('offline'));
+
+    await fixture.componentInstance.more();
+    await fixture.componentInstance.more();
+
+    expect(api.list.mock.calls.at(-2)).toEqual([1]);
+    expect(api.list.mock.calls.at(-1)).toEqual([1]);
+  });
+
+  it('loads one page at a time', async () => {
+    const { fixture, api } = await setup();
+    api.list.mockClear();
+
+    void fixture.componentInstance.more();
+    void fixture.componentInstance.more();
+
+    expect(api.list).toHaveBeenCalledTimes(1);
   });
 
   it('duplicates a chart under a new title', async () => {
