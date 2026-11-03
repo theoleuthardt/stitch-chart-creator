@@ -403,6 +403,42 @@ describe('EditorStore', () => {
       expect(cells().every((cell) => cell === 0)).toBe(true);
     });
 
+    it('makes one undo step of a line, however long it was dragged', () => {
+      store.setTool('line');
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([4, 0]);
+      store.strokeMove([4, 4]);
+      store.strokeEnd();
+      store.undo();
+
+      expect(cells().every((cell) => cell === 0)).toBe(true);
+      expect(store.canUndo()).toBe(false);
+    });
+
+    it('removes the preview of a cancelled rectangle', () => {
+      store.setTool('rectangle');
+
+      store.strokeStart([0, 0]);
+      store.strokeMove([3, 3]);
+      store.strokeCancel();
+
+      expect(cells().every((cell) => cell === 0)).toBe(true);
+      expect(store.canUndo()).toBe(false);
+    });
+
+    it('keeps the tool in the middle of a stroke', () => {
+      store.strokeStart([0, 0]);
+      store.strokeMove([2, 0]);
+
+      store.setTool('line');
+      store.strokeMove([3, 0]);
+      store.strokeEnd();
+
+      expect(store.tool()).toBe('pencil');
+      expect(cells().slice(0, 4)).toEqual([1, 1, 1, 1]);
+    });
+
     it('ignores strokes outside the chart', () => {
       store.strokeStart([-1, -1]);
       store.strokeEnd();
