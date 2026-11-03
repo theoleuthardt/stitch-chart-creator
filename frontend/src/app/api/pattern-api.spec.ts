@@ -64,6 +64,13 @@ describe('PatternApi', () => {
     expect((await loaded).id).toBe('a');
   });
 
+  it('keeps an id from the address inside its path segment', async () => {
+    const loaded = api.get('../users?x=1');
+    http.expectOne('/api/patterns/..%2Fusers%3Fx%3D1').flush({ id: 'a' });
+
+    await loaded;
+  });
+
   it('deletes a pattern', async () => {
     const deleted = api.remove('a');
     const request = http.expectOne('/api/patterns/a');

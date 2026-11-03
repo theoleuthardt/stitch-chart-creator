@@ -48,6 +48,9 @@ export class Autosave {
 
   /** Resolves a conflict in favour of this chart, on top of the newest stored version. */
   overwrite(version: number): void {
+    if (this.saving) {
+      return;
+    }
     this.version = version;
     this.clearTimer();
     void this.run();
