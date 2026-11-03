@@ -19,6 +19,18 @@ describe('apiErrorMessage', () => {
     );
   });
 
+  it('explains a chart beyond the size limit', () => {
+    expect(apiErrorMessage(new HttpErrorResponse({ status: 413 }))).toBe(
+      'This chart is too large to save.',
+    );
+  });
+
+  it('asks to wait while the server is busy', () => {
+    expect(apiErrorMessage(new HttpErrorResponse({ status: 503 }))).toBe(
+      'The server is busy. Please try again in a moment.',
+    );
+  });
+
   it('falls back to a generic message', () => {
     expect(apiErrorMessage(new HttpErrorResponse({ status: 500 }))).toBe(
       'Something went wrong. Please try again.',

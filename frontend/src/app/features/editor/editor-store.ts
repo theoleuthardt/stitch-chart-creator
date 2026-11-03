@@ -49,8 +49,11 @@ export class EditorStore {
     this.color.set(1);
   }
 
+  /** Changes the tool. A stroke keeps the tool it started with. */
   setTool(tool: Tool): void {
-    this.tool.set(tool);
+    if (!this.strokeBase) {
+      this.tool.set(tool);
+    }
   }
 
   setColor(color: number): void {
