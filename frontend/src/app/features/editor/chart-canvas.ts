@@ -15,7 +15,18 @@ import {
 import { changedRegion, ChartTheme, drawChart, GUTTER } from '../../chart/chart-renderer';
 import { Pattern } from '../../domain/pattern';
 import { cellAspect } from '../../domain/symbols';
-import { cellAt, fitToWindow, panBy, pinch, Point, Viewport, zoomAt } from '../../domain/viewport';
+import {
+  CellRange,
+  cellAt,
+  cellHeight,
+  centerOn,
+  fitToWindow,
+  panBy,
+  pinch,
+  Point,
+  Viewport,
+  zoomAt,
+} from '../../domain/viewport';
 
 /** How much one wheel step zooms. */
 const WHEEL_ZOOM = 1.0015;
@@ -77,10 +88,12 @@ export class ChartCanvas {
 
   private context: CanvasRenderingContext2D | null = null;
   private theme: ChartTheme | null = null;
+  private accent = '';
   private size = { width: 0, height: 0 };
   private drawn: Pattern | null = null;
   private fullRedrawQueued = false;
   private readonly pointers = new Map<number, Point>();
+  private marked: CellRange | null = null;
   private stroking = false;
   private panning = false;
 
@@ -118,6 +131,14 @@ export class ChartCanvas {
         cellAspect(craftType),
       ),
     );
+  }
+
+  /** Brings a place to the middle and marks it, or marks the whole row without `x`. */
+  focus({ x, y }: { x?: number; y: number }): void {
+    this.viewport.update((view) =>
+      centerOn(view, x ?? this.pattern().width / 2, y, this.size.width, this.size.height),
+    );
+    this.marked = { fromX: x ?? 0, toX: x ?? this.pattern().width - 1, fromY: y, toY: y };
   }
 
   /** Zooms around the middle of the window. */
@@ -230,6 +251,9 @@ export class ChartCanvas {
 
   private draw(pattern: Pattern): void {
     const previous = this.drawn;
+    if (previous && previous !== pattern) {
+      this.marked = null;
+    }
     const region = previous ? changedRegion(previous, pattern) : 'all';
     if (region === 'all') {
       if (previous && previous.width !== pattern.width && this.size.width > 0) {
@@ -253,6 +277,22 @@ export class ChartCanvas {
     this.context.clearRect(0, 0, width, height);
     drawChart(this.context, pattern, this.viewport(), this.size, this.theme);
     this.drawn = pattern;
+    if (this.marked) {
+      this.drawMark(this.context, this.marked);
+    }
+  }
+
+  private drawMark(context: CanvasRenderingContext2D, mark: CellRange): void {
+    const view = this.viewport();
+    const rowHeight = cellHeight(view);
+    context.strokeStyle = this.accent;
+    context.lineWidth = 3;
+    context.strokeRect(
+      view.offsetX + mark.fromX * view.scale - 2,
+      view.offsetY + mark.fromY * rowHeight - 2,
+      (mark.toX - mark.fromX + 1) * view.scale + 4,
+      (mark.toY - mark.fromY + 1) * rowHeight + 4,
+    );
   }
 
   /** Canvas colours must be plain values, so the browser resolves the tokens on a probe first. */
@@ -263,6 +303,7 @@ export class ChartCanvas {
       probe.style.color = `var(${name})`;
       return getComputedStyle(probe).color;
     };
+    this.accent = token('--color-accent');
     const theme = {
       paper: token('--chart-paper'),
       gridMinor: token('--chart-grid-minor'),

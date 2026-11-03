@@ -1,5 +1,6 @@
 import {
   cellAt,
+  centerOn,
   fitToWindow,
   MAX_SCALE,
   MIN_SCALE,
@@ -101,6 +102,24 @@ describe('pinch with fingers on one spot', () => {
     expect(result.scale).toBe(10);
     expect(Number.isFinite(result.offsetX)).toBe(true);
     expect(Number.isFinite(result.offsetY)).toBe(true);
+  });
+});
+
+describe('centerOn', () => {
+  it('brings a cell to the middle of the window', () => {
+    const centred = centerOn({ ...view, scale: 20 }, 4, 2, 200, 100);
+
+    expect(centred.offsetX).toBe(10);
+    expect(centred.offsetY).toBe(0);
+    expect(centred.scale).toBe(20);
+  });
+
+  it('zooms in far enough to see the cell', () => {
+    expect(centerOn({ ...view, scale: 1 }, 0, 0, 100, 100).scale).toBeGreaterThan(8);
+  });
+
+  it('uses the height of stitches that are not square', () => {
+    expect(centerOn({ ...view, scale: 20, aspect: 0.5 }, 0, 2, 200, 100).offsetY).toBe(25);
   });
 });
 

@@ -27,6 +27,9 @@ export type Point = readonly [number, number];
 export const MIN_SCALE = 0.25;
 export const MAX_SCALE = 128;
 
+/** Jumping to a cell zooms in at least this far. */
+const MIN_FOCUS_SCALE = 16;
+
 /** Fitting a chart to the window stops at this scale, so tiny charts do not look absurd. */
 const MAX_FIT_SCALE = 48;
 
@@ -93,6 +96,24 @@ export function fitToWindow(
     aspect,
     offsetX: (windowWidth - chartWidth * scale) / 2,
     offsetY: (windowHeight - chartHeight * scale * aspect) / 2,
+  };
+}
+
+/** Brings a cell to the middle of the window, zoomed in far enough to see it. */
+export function centerOn(
+  viewport: Viewport,
+  x: number,
+  y: number,
+  windowWidth: number,
+  windowHeight: number,
+): Viewport {
+  const scale = Math.max(viewport.scale, MIN_FOCUS_SCALE);
+  const rowHeight = scale * (viewport.aspect ?? 1);
+  return {
+    ...viewport,
+    scale,
+    offsetX: windowWidth / 2 - (x + 0.5) * scale,
+    offsetY: windowHeight / 2 - (y + 0.5) * rowHeight,
   };
 }
 

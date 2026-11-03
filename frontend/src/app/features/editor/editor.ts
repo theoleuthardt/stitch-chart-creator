@@ -24,6 +24,7 @@ import { Symmetry } from '../../domain/symmetry';
 import { Autosave, SaveStatus } from './autosave';
 import { ChartCanvas } from './chart-canvas';
 import { ChartSettings } from './chart-settings';
+import { CheckPanel } from './check-panel';
 import { EditorStore, Tool } from './editor-store';
 import { ExportPanel } from './export-panel';
 import { PalettePanel } from './palette-panel';
@@ -42,7 +43,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
 /** The editor screen around the chart. */
 @Component({
   selector: 'scc-editor',
-  imports: [ChartCanvas, ChartSettings, ExportPanel, PalettePanel, SymbolPanel],
+  imports: [ChartCanvas, ChartSettings, CheckPanel, ExportPanel, PalettePanel, SymbolPanel],
   providers: [EditorStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -119,6 +120,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
             <scc-chart-settings />
             <scc-symbol-panel />
             <scc-palette-panel />
+            <scc-check-panel (jump)="canvas().focus($event)" />
             <scc-export-panel />
           </aside>
         </div>
