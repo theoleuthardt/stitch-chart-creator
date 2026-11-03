@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { apiErrorMessage } from '../../api/api-error';
-import { PatternApi } from '../../api/pattern-api';
+import { PatternApi, StoredPattern } from '../../api/pattern-api';
 import {
   mirrorHorizontal,
   mirrorVertical,
@@ -101,7 +101,7 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
         </div>
         @if (status() === 'conflict') {
           <div class="conflict" role="alert">
-            <span>This chart was changed elsewhere.</span>
+            <span>{{ notice() ?? 'This chart was changed elsewhere.' }}</span>
             <button class="button" type="button" (click)="reload()">Load the other version</button>
             <button class="button" type="button" (click)="overwrite()">Keep mine</button>
           </div>
@@ -180,6 +180,19 @@ const STATUS_TEXT: Readonly<Record<SaveStatus, string>> = {
       font-size: 0.875rem;
     }
 
+    @media (width < 48rem) {
+      .workspace {
+        flex-direction: column;
+      }
+
+      aside {
+        width: 100%;
+        max-height: 40%;
+        border-top: 1px solid var(--color-border);
+        border-left: 0;
+      }
+    }
+
     .conflict {
       display: flex;
       flex-wrap: wrap;
@@ -211,6 +224,7 @@ export class Editor {
   ];
   readonly ready = signal(false);
   readonly loadError = signal<string | null>(null);
+  readonly notice = signal<string | null>(null);
   readonly status = computed(() => this.autosave()?.status() ?? 'saved');
   readonly statusText = computed(() => STATUS_TEXT[this.status()]);
 
@@ -232,33 +246,46 @@ export class Editor {
     void this.open();
   }
 
-  /** Loads the stored chart, discarding what is open. */
-  async open(): Promise<void> {
-    this.autosave()?.stop();
+  private async open(): Promise<void> {
     try {
-      const stored = await this.api.get(this.id);
-      this.store.load(stored);
-      this.autosave.set(
-        new Autosave(
-          this.store,
-          async (pattern, version) => (await this.api.save(this.id, pattern, version)).version,
-          stored.version,
-        ),
-      );
+      this.start(await this.api.get(this.id));
       this.ready.set(true);
     } catch (error) {
       this.loadError.set(apiErrorMessage(error));
     }
   }
 
-  reload(): Promise<void> {
-    return this.open();
+  private start(stored: StoredPattern): void {
+    this.autosave()?.stop();
+    this.store.load(stored);
+    this.autosave.set(
+      new Autosave(
+        this.store,
+        async (pattern, version) => (await this.api.save(this.id, pattern, version)).version,
+        stored.version,
+      ),
+    );
+  }
+
+  /** Replaces this state with the stored one. The open chart stays if that cannot be loaded. */
+  async reload(): Promise<void> {
+    try {
+      this.start(await this.api.get(this.id));
+      this.notice.set(null);
+    } catch (error) {
+      this.notice.set(apiErrorMessage(error));
+    }
   }
 
   /** Keeps this state and stores it on top of the version that caused the conflict. */
   async overwrite(): Promise<void> {
-    const stored = await this.api.get(this.id);
-    this.autosave()?.overwrite(stored.version);
+    try {
+      const stored = await this.api.get(this.id);
+      this.autosave()?.overwrite(stored.version);
+      this.notice.set(null);
+    } catch (error) {
+      this.notice.set(apiErrorMessage(error));
+    }
   }
 
   toggleSymmetry(axis: keyof Symmetry): void {
@@ -278,7 +305,7 @@ export class Editor {
   @HostListener('document:keydown', ['$event'])
   keyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) {
       return;
     }
     const shortcut = shortcutFor(event);

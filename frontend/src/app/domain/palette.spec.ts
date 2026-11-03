@@ -1,4 +1,11 @@
-import { addColor, changeColor, isHexColor, mergeColors, removeColor } from './palette';
+import {
+  addColor,
+  changeColor,
+  isHexColor,
+  mergeColors,
+  numberAfterRemoval,
+  removeColor,
+} from './palette';
 import { createPattern, Pattern } from './pattern';
 
 const chart = (cells: number[]): Pattern => ({
@@ -78,6 +85,16 @@ describe('removeColor', () => {
 
   it('keeps empty cells empty', () => {
     expect(removeColor(chart([0, 1]), 1, 2).cells).toEqual([0, 1]);
+  });
+});
+
+describe('numberAfterRemoval', () => {
+  it('moves numbers behind the removed colour down', () => {
+    expect(numberAfterRemoval(3, 1)).toBe(2);
+  });
+
+  it('leaves numbers in front of it alone', () => {
+    expect(numberAfterRemoval(1, 3)).toBe(1);
   });
 });
 
