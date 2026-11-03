@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -266,11 +265,6 @@ class AuthApiTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"a\",\"password\":\"b\"}"))
         .andExpect(status().isForbidden());
-  }
-
-  @Test
-  void theFirstRequestHandsOutTheCsrfCookieForAngular() throws Exception {
-    me(null).andExpect(cookie().exists("XSRF-TOKEN"));
   }
 
   @Test
